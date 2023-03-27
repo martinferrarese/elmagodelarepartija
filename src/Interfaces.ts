@@ -19,3 +19,11 @@ export interface Deudor {
   cuantoDebeEnTotal: number;
   aQuienesLeDebe: Acreedor[];
 }
+
+export interface Grupo {
+  integrantes: IntegranteDelGrupo[];
+}
+export interface Subgrupo {
+  id: number;
+  integrantes: IntegranteDelSubgrupo[];
+}
