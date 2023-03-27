@@ -7,16 +7,16 @@ import {
 } from './Logica';
 
 const integrantes: IntegranteDelGrupo[] = [
-  { nombre: 'Ferra', plataQuePuso: 1300, divideEntre: [] },
-  { nombre: 'Manita', plataQuePuso: 500, divideEntre: [] },
-  { nombre: 'Cami', plataQuePuso: 0, divideEntre: [] },
+  { nombre: 'Ferra', plataQuePuso: 1300, divideEntre: ['Ferra', 'Manita', 'Cami'] },
+  { nombre: 'Manita', plataQuePuso: 500, divideEntre: ['Ferra', 'Manita', 'Cami'] },
+  { nombre: 'Cami', plataQuePuso: 0, divideEntre: ['Ferra', 'Manita', 'Cami'] },
 ];
 
 const integrantes2: IntegranteDelGrupo[] = [
-  { nombre: 'A', plataQuePuso: 2000, divideEntre: [] },
-  { nombre: 'B', plataQuePuso: 800, divideEntre: [] },
-  { nombre: 'C', plataQuePuso: 0, divideEntre: [] },
-  { nombre: 'D', plataQuePuso: 0, divideEntre: [] },
+  { nombre: 'A', plataQuePuso: 2000, divideEntre: ['A', 'B', 'C', 'D'] },
+  { nombre: 'B', plataQuePuso: 800, divideEntre: ['A', 'B', 'C', 'D'] },
+  { nombre: 'C', plataQuePuso: 0, divideEntre: ['A', 'B', 'C', 'D'] },
+  { nombre: 'D', plataQuePuso: 0, divideEntre: ['A', 'B', 'C', 'D'] },
 ];
 
 describe('Divide todo entre todos', () => {
@@ -40,10 +40,10 @@ describe('Divide todo entre todos', () => {
 
   it('4 integrantes, 1 acreedor, 2 deudores, uno hecho', () => {
     const cuatroIntegrantes: IntegranteDelGrupo[] = [
-      { nombre: 'A', plataQuePuso: 2000, divideEntre: [] },
-      { nombre: 'B', plataQuePuso: 700, divideEntre: [] },
-      { nombre: 'C', plataQuePuso: 100, divideEntre: [] },
-      { nombre: 'D', plataQuePuso: 0, divideEntre: [] },
+      { nombre: 'A', plataQuePuso: 2000, divideEntre: ['A', 'B', 'C', 'D'] },
+      { nombre: 'B', plataQuePuso: 700, divideEntre: ['A', 'B', 'C', 'D'] },
+      { nombre: 'C', plataQuePuso: 100, divideEntre: ['A', 'B', 'C', 'D'] },
+      { nombre: 'D', plataQuePuso: 0, divideEntre: ['A', 'B', 'C', 'D'] },
     ];
 
     const deudoresEsperados: Deudor[] = [

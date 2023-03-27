@@ -3,6 +3,7 @@ import {
   calcular,
   identificarSubgrupos,
   siElSubgrupoExisteActualizarPlataQuePusoYDevolverloSinoCrearlo,
+  unificarDeudores,
 } from './Logica';
 
 const integrantes: IntegranteDelGrupo[] = [
@@ -10,6 +11,47 @@ const integrantes: IntegranteDelGrupo[] = [
   { nombre: 'Manita', plataQuePuso: 500, divideEntre: ['Manita', 'Cami'] },
   { nombre: 'Cami', plataQuePuso: 0, divideEntre: ['Ferra', 'Manita', 'Cami'] },
 ];
+
+describe('Unificar deudores', () => {
+  it('aaa', () => {
+    const deudores = [
+      {
+        nombre: 'Cami',
+        cuantoDebeEnTotal: 0,
+        aQuienesLeDebe: [{ nombre: 'Manita', cuantoTieneQueCobrar: 250 }],
+      },
+      {
+        nombre: 'Manita',
+        cuantoDebeEnTotal: 0,
+        aQuienesLeDebe: [{ nombre: 'Ferra', cuantoTieneQueCobrar: 400 }],
+      },
+      {
+        nombre: 'Cami',
+        cuantoDebeEnTotal: 0,
+        aQuienesLeDebe: [{ nombre: 'Ferra', cuantoTieneQueCobrar: 400 }],
+      },
+    ];
+
+    const deudoresEsperados = [
+      {
+        nombre: 'Manita',
+        cuantoDebeEnTotal: 0,
+        aQuienesLeDebe: [{ nombre: 'Ferra', cuantoTieneQueCobrar: 400 }],
+      },
+      {
+        nombre: 'Cami',
+        cuantoDebeEnTotal: 0,
+        aQuienesLeDebe: [
+          { nombre: 'Manita', cuantoTieneQueCobrar: 250 },
+          { nombre: 'Ferra', cuantoTieneQueCobrar: 400 },
+        ],
+      },
+    ];
+
+    const deudoresUnificados = unificarDeudores(deudores);
+    expect(deudoresUnificados).toEqual(deudoresEsperados);
+  });
+});
 
 describe('Si el subgrupo existe devolver su id, sino crearlo', () => {
   const subgruposExistentes: Subgrupo[] = [
@@ -95,10 +137,10 @@ describe('Si el subgrupo existe devolver su id, sino crearlo', () => {
 });
 
 describe('Varios subgrupos', () => {
-  it.skip('Identificar subgrupos', () => {
+  it('Identificar subgrupos', () => {
     const subgruposEsperados: Subgrupo[] = [
       {
-        id: 0,
+        id: 2,
         integrantes: [
           {
             nombre: 'Manita',
@@ -114,13 +156,14 @@ describe('Varios subgrupos', () => {
         id: 1,
         integrantes: [
           {
-            nombre: 'Manita',
-            plataQuePuso: 0,
-          },
-          {
             nombre: 'Ferra',
             plataQuePuso: 1200,
           },
+          {
+            nombre: 'Manita',
+            plataQuePuso: 0,
+          },
+
           {
             nombre: 'Cami',
             plataQuePuso: 0,
@@ -132,19 +175,19 @@ describe('Varios subgrupos', () => {
     const subgrupos = identificarSubgrupos({ integrantes });
     expect(subgrupos).toEqual(subgruposEsperados);
   });
-  it.skip('2 subgrupos', () => {
+  it('2 subgrupos', () => {
     const deudoresEsperados: Deudor[] = [
       {
         nombre: 'Manita',
-        cuantoDebeEnTotal: 400,
+        cuantoDebeEnTotal: 0,
         aQuienesLeDebe: [{ nombre: 'Ferra', cuantoTieneQueCobrar: 400 }],
       },
       {
         nombre: 'Cami',
-        cuantoDebeEnTotal: 650,
+        cuantoDebeEnTotal: 0,
         aQuienesLeDebe: [
-          { nombre: 'Ferra', cuantoTieneQueCobrar: 400 },
           { nombre: 'Manita', cuantoTieneQueCobrar: 250 },
+          { nombre: 'Ferra', cuantoTieneQueCobrar: 400 },
         ],
       },
     ];

@@ -92,6 +92,8 @@ function listasDeIntegrantesSonIguales(array1: string[], array2: string[]) {
 }
 
 export function siguienteId(subgruposExistentes: Subgrupo[]) {
+  if (subgruposExistentes.length === 0) return 1;
+
   const ids = subgruposExistentes.map((subgrupo) => subgrupo.id);
   const maximo = Math.max(...ids);
   return maximo + 1;
@@ -141,17 +143,57 @@ export function siElSubgrupoExisteActualizarPlataQuePusoYDevolverloSinoCrearlo(
 }
 
 export function identificarSubgrupos(grupo: Grupo): Subgrupo[] {
-  const subgrupos: Subgrupo[] = [];
+  let subgrupos: Subgrupo[] = [];
 
-  // grupo.integrantes.forEach((integrante) => {
-  //   if (subgrupos)
-  // })
+  grupo.integrantes.forEach((integrante) => {
+    const subgrupoAlQuePertenece = siElSubgrupoExisteActualizarPlataQuePusoYDevolverloSinoCrearlo(
+      subgrupos,
+      integrante,
+    );
 
-  return [];
+    const subgruposSinElQuePertenece = subgrupos.filter((x) => x.id !== subgrupoAlQuePertenece.id);
+    subgrupos = [...subgruposSinElQuePertenece, subgrupoAlQuePertenece];
+  });
+
+  return subgrupos;
+}
+
+export function unificarDeudores(deudores: Deudor[]): Deudor[] {
+  let deudoresUnificados: Deudor[] = [];
+
+  deudores.forEach((deudor) => {
+    const deudorYaExistente = deudoresUnificados.find(
+      (deudorUnificado) => deudor.nombre === deudorUnificado.nombre,
+    );
+
+    if (deudorYaExistente) {
+      const deudorConAcreedoresActualizados: Deudor = {
+        nombre: deudorYaExistente.nombre,
+        cuantoDebeEnTotal: deudorYaExistente.cuantoDebeEnTotal,
+        aQuienesLeDebe: [...deudorYaExistente.aQuienesLeDebe, ...deudor.aQuienesLeDebe],
+      };
+      deudoresUnificados = deudoresUnificados.filter((x) => x.nombre !== deudorYaExistente.nombre);
+      deudoresUnificados = [...deudoresUnificados, deudorConAcreedoresActualizados];
+    } else {
+      deudoresUnificados = [...deudoresUnificados, deudor];
+    }
+  });
+
+  return deudoresUnificados;
 }
 
 export function calcular(integrantes: IntegranteDelGrupo[]): Deudor[] {
   const subgrupos = identificarSubgrupos({ integrantes });
 
-  return calcularDeudoresDelSubgrupo(integrantes);
+  // eslint-disable-next-line prefer-const
+  let resultado: Deudor[] = [];
+
+  subgrupos.forEach((subgrupo) => {
+    const deudoresDelSubgrupo = calcularDeudoresDelSubgrupo(subgrupo.integrantes);
+    resultado.push(...deudoresDelSubgrupo);
+  });
+
+  resultado = unificarDeudores(resultado);
+
+  return resultado;
 }
