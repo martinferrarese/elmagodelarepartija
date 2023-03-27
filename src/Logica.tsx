@@ -10,35 +10,43 @@ export interface Acreedor {
 
 export interface Deudor {
   nombre: string;
-  cuantoDebeEnTotal: number,
+  cuantoDebeEnTotal: number;
   aQuienesLeDebe: Acreedor[];
 }
 
-export function calcularTotalGastado(
-  integrantes: IntegranteDelGrupo[]
-): number {
+export function calcularTotalGastado(integrantes: IntegranteDelGrupo[]): number {
   return integrantes.reduce((n, { plataQuePuso }) => n + plataQuePuso, 0);
 }
 
-export function calcularCuantoTieneQuePonerCadaUno(totalGastado: number, cantidadDeIntegrantes: number): number {
+export function calcularCuantoTieneQuePonerCadaUno(
+  totalGastado: number,
+  cantidadDeIntegrantes: number,
+): number {
   return totalGastado / cantidadDeIntegrantes;
 }
 
-export function calcularAQuienesHayQueDarlePlata(integrantes: IntegranteDelGrupo[], cuantoPoneCadaUno: number): Acreedor[] {
+export function calcularAQuienesHayQueDarlePlata(
+  integrantes: IntegranteDelGrupo[],
+  cuantoPoneCadaUno: number,
+): Acreedor[] {
   const resultado = integrantes.filter((integrante) => integrante.plataQuePuso > cuantoPoneCadaUno);
 
-  return resultado.map((integrante) => ({ nombre: integrante.nombre,
+  return resultado.map((integrante) => ({
+    nombre: integrante.nombre,
     cuantoTieneQueCobrar: integrante.plataQuePuso - cuantoPoneCadaUno,
   }));
 }
 
-export function calcularQuienesFaltaPonerPlata(integrantes: IntegranteDelGrupo[], cuantoPoneCadaUno: number): Deudor[] {
+export function calcularQuienesFaltaPonerPlata(
+  integrantes: IntegranteDelGrupo[],
+  cuantoPoneCadaUno: number,
+): Deudor[] {
   const resultado = integrantes.filter((integrante) => integrante.plataQuePuso < cuantoPoneCadaUno);
 
   return resultado.map((integrante) => ({
     nombre: integrante.nombre,
     cuantoDebeEnTotal: cuantoPoneCadaUno - integrante.plataQuePuso,
-    aQuienesLeDebe: []
+    aQuienesLeDebe: [],
   }));
 }
 
@@ -54,27 +62,23 @@ export function calcular(integrantes: IntegranteDelGrupo[]): Deudor[] {
     // eslint-disable-next-line no-plusplus
     for (let i = 0; i < tienenQuePagarAlgo.length; i++) {
       if (tienenQuePagarAlgo[i].cuantoDebeEnTotal > 0 && cuantoLeFaltaAlAcreedor > 0) {
-        const debeMenosDeLoQueTieneQueCobrarElAcreedor = cuantoLeFaltaAlAcreedor
-        - tienenQuePagarAlgo[i].cuantoDebeEnTotal >= 0;
+        const debeMenosDeLoQueTieneQueCobrarElAcreedor =
+          cuantoLeFaltaAlAcreedor - tienenQuePagarAlgo[i].cuantoDebeEnTotal >= 0;
 
         if (debeMenosDeLoQueTieneQueCobrarElAcreedor) {
           const cuantoPagaElDeudor = tienenQuePagarAlgo[i].cuantoDebeEnTotal;
-          tienenQuePagarAlgo[i].aQuienesLeDebe.push(
-            {
-              nombre: acreedor.nombre,
-              cuantoTieneQueCobrar: cuantoPagaElDeudor
-            }
-          );
+          tienenQuePagarAlgo[i].aQuienesLeDebe.push({
+            nombre: acreedor.nombre,
+            cuantoTieneQueCobrar: cuantoPagaElDeudor,
+          });
           cuantoLeFaltaAlAcreedor -= cuantoPagaElDeudor;
           tienenQuePagarAlgo[i].cuantoDebeEnTotal -= cuantoPagaElDeudor;
         } else {
           const cuantoPagaElDeudor = cuantoLeFaltaAlAcreedor;
-          tienenQuePagarAlgo[i].aQuienesLeDebe.push(
-            {
-              nombre: acreedor.nombre,
-              cuantoTieneQueCobrar: cuantoPagaElDeudor
-            }
-          );
+          tienenQuePagarAlgo[i].aQuienesLeDebe.push({
+            nombre: acreedor.nombre,
+            cuantoTieneQueCobrar: cuantoPagaElDeudor,
+          });
           cuantoLeFaltaAlAcreedor -= cuantoPagaElDeudor;
           tienenQuePagarAlgo[i].cuantoDebeEnTotal -= cuantoPagaElDeudor;
         }

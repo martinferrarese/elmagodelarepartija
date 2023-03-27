@@ -1,22 +1,22 @@
 // import Button from "@mui/material/Button";
-import ListaIntegrantes from "./ListaIntegrantes";
-import "./App.css";
+import ListaIntegrantes from './ListaIntegrantes';
+import './App.css';
 
 function App() {
   const estilos = {
     contenedor: {
-      height: "100%",
-      left: "0px",
-      width: "100%",
-      overflow: "hidden",
-      paddingLeft: "1em",
+      height: '100%',
+      left: '0px',
+      width: '100%',
+      overflow: 'hidden',
+      paddingLeft: '1em',
     },
     titulo: {
-      color: "black",
+      color: 'black',
     },
     contenedorTitulo: {
-      display: "flex",
-      justifyContent: "center",
+      display: 'flex',
+      justifyContent: 'center',
     },
   };
 
