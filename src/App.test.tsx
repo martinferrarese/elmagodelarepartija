@@ -4,6 +4,6 @@ import App from './App';
 
 test('test de ejemplo de react', () => {
   render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
+  const linkElement = screen.getByText(/El mago de la repartija/i);
   expect(linkElement).toBeInTheDocument();
 });

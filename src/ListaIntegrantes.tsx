@@ -10,7 +10,7 @@ function ListaIntegrantes() {
   const [deudores, setDeudores] = useState<Deudor[]>([]);
 
   const agregarIntegrante = () => {
-    setLista((listaAnterior) => [...listaAnterior, { nombre, plataQuePuso }]);
+    setLista((listaAnterior) => [...listaAnterior, { nombre, plataQuePuso, divideEntre: [] }]);
     setNombre('');
     setPlataQuePuso(0);
   };

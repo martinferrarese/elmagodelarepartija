@@ -1,6 +1,7 @@
 export interface IntegranteDelGrupo {
   nombre: string;
   plataQuePuso: number;
+  divideEntre: string[]; // array vacío divide entre todos
 }
 
 export interface Acreedor {
