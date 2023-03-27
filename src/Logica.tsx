@@ -1,21 +1,6 @@
-export interface IntegranteDelGrupo {
-  nombre: string;
-  plataQuePuso: number;
-  divideEntre: string[]; // array vacío divide entre todos
-}
+import { IntegranteDelSubgrupo, Acreedor, Deudor, IntegranteDelGrupo } from './Interfaces';
 
-export interface Acreedor {
-  nombre: string;
-  cuantoTieneQueCobrar: number;
-}
-
-export interface Deudor {
-  nombre: string;
-  cuantoDebeEnTotal: number;
-  aQuienesLeDebe: Acreedor[];
-}
-
-export function calcularTotalGastado(integrantes: IntegranteDelGrupo[]): number {
+export function calcularTotalGastado(integrantes: IntegranteDelSubgrupo[]): number {
   return integrantes.reduce((n, { plataQuePuso }) => n + plataQuePuso, 0);
 }
 
@@ -27,7 +12,7 @@ export function calcularCuantoTieneQuePonerCadaUno(
 }
 
 export function calcularAQuienesHayQueDarlePlata(
-  integrantes: IntegranteDelGrupo[],
+  integrantes: IntegranteDelSubgrupo[],
   cuantoPoneCadaUno: number,
 ): Acreedor[] {
   const resultado = integrantes.filter((integrante) => integrante.plataQuePuso > cuantoPoneCadaUno);
@@ -39,7 +24,7 @@ export function calcularAQuienesHayQueDarlePlata(
 }
 
 export function calcularQuienesFaltaPonerPlata(
-  integrantes: IntegranteDelGrupo[],
+  integrantes: IntegranteDelSubgrupo[],
   cuantoPoneCadaUno: number,
 ): Deudor[] {
   const resultado = integrantes.filter((integrante) => integrante.plataQuePuso < cuantoPoneCadaUno);
@@ -51,7 +36,7 @@ export function calcularQuienesFaltaPonerPlata(
   }));
 }
 
-export function calcular(integrantes: IntegranteDelGrupo[]): Deudor[] {
+export function calcularDeudoresDelSubgrupo(integrantes: IntegranteDelSubgrupo[]): Deudor[] {
   const totalGastado = calcularTotalGastado(integrantes);
   const cuantoPoneCadaUno = calcularCuantoTieneQuePonerCadaUno(totalGastado, integrantes.length);
   const tienenQueCobrarAlgo = calcularAQuienesHayQueDarlePlata(integrantes, cuantoPoneCadaUno);
@@ -88,4 +73,8 @@ export function calcular(integrantes: IntegranteDelGrupo[]): Deudor[] {
   });
 
   return tienenQuePagarAlgo;
+}
+
+export function calcular(integrantes: IntegranteDelGrupo[]): Deudor[] {
+  return calcularDeudoresDelSubgrupo(integrantes);
 }

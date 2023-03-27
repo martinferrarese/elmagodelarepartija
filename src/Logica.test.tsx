@@ -1,11 +1,9 @@
+import { IntegranteDelGrupo, Deudor, Acreedor } from './Interfaces';
 import {
   calcular,
   calcularTotalGastado,
   calcularAQuienesHayQueDarlePlata,
   calcularQuienesFaltaPonerPlata,
-  IntegranteDelGrupo,
-  Deudor,
-  Acreedor,
 } from './Logica';
 
 const integrantes: IntegranteDelGrupo[] = [

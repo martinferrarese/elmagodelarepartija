@@ -1,7 +1,8 @@
 import { Button, Container, Grid, TextField } from '@mui/material';
 import { useState } from 'react';
 import './App.css';
-import { calcular, Deudor, IntegranteDelGrupo } from './Logica';
+import { Deudor, IntegranteDelGrupo } from './Interfaces';
+import { calcular } from './Logica';
 
 function ListaIntegrantes() {
   const [lista, setLista] = useState<IntegranteDelGrupo[]>([]);
