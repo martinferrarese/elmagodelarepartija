@@ -13,5 +13,5 @@
 ## 3. Activación y verificación
 
 - [x] 3.1 Confirmar en Settings → Pages que el source apunta a `gh-pages` (o ajustar al método elegido)
-- [ ] 3.2 Pushear el change a `main`, esperar el workflow verde y verificar que carga `https://martinferrarese.github.io/elmagodelarepartija/`
+- [x] 3.2 Pushear el change a `main`, esperar el workflow verde y verificar que carga `https://martinferrarese.github.io/elmagodelarepartija/`
 - [x] 3.3 Confirmar que un build fallido no sobrescribe el sitio publicado (revisar condición del job / step de publish)
