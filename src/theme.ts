@@ -71,6 +71,13 @@ export const magoTheme = createTheme({
             backgroundColor: magoColors.goldPress,
           },
         },
+        containedSecondary: {
+          boxShadow: 'none',
+          '&:hover': {
+            boxShadow: 'none',
+            backgroundColor: magoColors.cloak,
+          },
+        },
         outlined: {
           borderColor: magoColors.cloakMid,
           color: magoColors.cloakMid,

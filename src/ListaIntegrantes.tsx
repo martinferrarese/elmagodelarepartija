@@ -128,6 +128,22 @@ function ListaIntegrantes() {
     );
   };
 
+  const setNombreSubgrupo = (id: number, nombreRaw: string) => {
+    setSubgrupos((prev) =>
+      prev.map((sg) => (sg.id === id ? { ...sg, nombre: nombreRaw } : sg)),
+    );
+  };
+
+  const confirmarNombreSubgrupo = (id: number) => {
+    setSubgrupos((prev) =>
+      prev.map((sg) => {
+        if (sg.id !== id) return sg;
+        const limpio = sg.nombre.trim();
+        return { ...sg, nombre: limpio.length > 0 ? limpio : `Grupo ${id}` };
+      }),
+    );
+  };
+
   const calcular = () => {
     const juntada = { roster, subgrupos };
     if (!juntadaEsValida(juntada)) {
@@ -162,7 +178,9 @@ function ListaIntegrantes() {
 
         {paso === 'roster' && (
           <Stack spacing={2}>
-            <Typography variant='h6'>¿Quiénes están en la juntada?</Typography>
+            <Typography variant='h6' textAlign='center' width='100%'>
+              ¿Quiénes están en la juntada?
+            </Typography>
             <Box>
               {roster.map((nombre) => (
                 <div className='roster-chip' key={nombre}>
@@ -212,16 +230,28 @@ function ListaIntegrantes() {
               <Button variant='outlined' onClick={() => setPaso('roster')}>
                 Volver
               </Button>
-              <Button variant='outlined' onClick={crearSubgrupo}>
+              <Button variant='contained' color='secondary' onClick={crearSubgrupo}>
                 Agregar grupo
               </Button>
             </Stack>
 
             {subgrupos.map((sg) => (
               <div className='subgroup-block' key={sg.id}>
-                <Typography variant='h6' component='h3'>
-                  {sg.nombre}
-                </Typography>
+                <TextField
+                  label='Nombre del grupo'
+                  size='small'
+                  fullWidth
+                  variant='outlined'
+                  value={sg.nombre}
+                  onChange={(e) => setNombreSubgrupo(sg.id, e.target.value)}
+                  onBlur={() => confirmarNombreSubgrupo(sg.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      (e.target as HTMLInputElement).blur();
+                    }
+                  }}
+                  sx={{ mb: 1 }}
+                />
                 <div className='subgroup-block__actions'>
                   <Button size='small' variant='contained' onClick={() => agregarTodos(sg.id)}>
                     Todos
