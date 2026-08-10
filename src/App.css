@@ -1,38 +1,194 @@
-.App {
-  text-align: center;
+.App-shell {
+  min-height: 100vh;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  background:
+    radial-gradient(ellipse at top, rgba(232, 197, 71, 0.08), transparent 45%),
+    linear-gradient(180deg, var(--cloak-mid) 0%, var(--cloak) 55%);
+  padding: 1rem 0.75rem 2.5rem;
+  box-sizing: border-box;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
+@media (min-width: 480px) {
+  .App-shell {
+    padding: 1.5rem 1rem 3rem;
   }
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.App-brand {
   display: flex;
   flex-direction: column;
   align-items: center;
+  text-align: center;
+  margin-bottom: 1.25rem;
+  color: var(--ink-on-cloak);
+  padding: 0 0.25rem;
+}
+
+.App-brand__logo {
+  width: 72px;
+  height: auto;
+  margin-bottom: 0.75rem;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.35));
+}
+
+@media (min-width: 480px) {
+  .App-brand__logo {
+    width: 88px;
+  }
+}
+
+.App-brand__title {
+  margin: 0;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: clamp(1.45rem, 6vw, 2.35rem);
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  line-height: 1.15;
+  color: var(--ink-on-cloak);
+  max-width: 100%;
+  word-break: break-word;
+}
+
+.App-brand__tagline {
+  margin: 0.4rem 0 0;
+  font-family: 'DM Sans', Helvetica, Arial, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  opacity: 0.9;
+  color: var(--lining);
+}
+
+.App-panel {
+  background: var(--lining);
+  color: var(--cloak);
+  border-radius: 16px;
+  padding: 1rem 0.85rem 1.25rem;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
+  box-sizing: border-box;
+  width: 100%;
+  overflow: hidden;
+}
+
+.App-panel .MuiStack-root {
+  width: 100%;
+}
+
+.App-panel .MuiFormControl-root {
+  width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.App-panel .MuiButton-root {
+  max-width: 100%;
+}
+
+@media (min-width: 480px) {
+  .App-panel {
+    padding: 1.25rem 1.25rem 1.5rem;
+  }
+}
+
+.step-indicator {
+  display: flex;
+  gap: 0.4rem;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
 }
 
-.App-link {
-  color: #61dafb;
+.step-indicator__item {
+  font-family: 'DM Sans', Helvetica, Arial, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.3rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(42, 20, 80, 0.2);
+  color: var(--cloak-mid);
+  background: transparent;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+@media (min-width: 480px) {
+  .step-indicator__item {
+    font-size: 0.8rem;
+    padding: 0.35rem 0.75rem;
   }
-  to {
-    transform: rotate(360deg);
-  }
+}
+
+.step-indicator__item--active {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--cloak);
+}
+
+.subgroup-block {
+  margin-bottom: 1.25rem;
+  padding: 0.85rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(42, 20, 80, 0.08);
+  box-sizing: border-box;
+  width: 100%;
+  overflow: hidden;
+}
+
+.subgroup-block__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0.75rem;
+}
+
+.member-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-width: 0;
+  margin-bottom: 0.35rem;
+}
+
+.member-row__check {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-right: 0 !important;
+  margin-left: 0 !important;
+}
+
+.member-row__check .MuiFormControlLabel-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.95rem;
+}
+
+.member-row__monto {
+  flex: 0 0 6.75rem;
+  width: 6.75rem;
+  max-width: 40%;
+}
+
+.member-row__monto .MuiInputBase-root {
+  background-color: #fff;
+}
+
+.roster-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.7);
+  min-width: 0;
+}
+
+.roster-chip .MuiTypography-root {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }

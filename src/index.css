@@ -1,7 +1,22 @@
+:root {
+  --cloak: #2a1450;
+  --cloak-mid: #3b1f6e;
+  --lining: #ede4f8;
+  --ink-on-cloak: #f7f2ff;
+  --gold: #e8c547;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
-    'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-family: 'DM Sans', Helvetica, Arial, sans-serif;
+  background: var(--cloak);
+  color: var(--ink-on-cloak);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

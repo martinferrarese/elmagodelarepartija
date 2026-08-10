@@ -1,32 +1,25 @@
-// import Button from "@mui/material/Button";
+import { CssBaseline, ThemeProvider } from '@mui/material';
 import ListaIntegrantes from './ListaIntegrantes';
 import './App.css';
+import { magoTheme } from './theme';
 
 function App() {
-  const estilos = {
-    contenedor: {
-      height: '100%',
-      left: '0px',
-      width: '100%',
-      overflow: 'hidden',
-      paddingLeft: '1em',
-    },
-    titulo: {
-      color: 'black',
-    },
-    contenedorTitulo: {
-      display: 'flex',
-      justifyContent: 'center',
-    },
-  };
-
   return (
-    <div style={estilos.contenedor}>
-      <div style={estilos.contenedorTitulo}>
-        <h1 style={estilos.titulo}>El mago de la repartija</h1>
+    <ThemeProvider theme={magoTheme}>
+      <CssBaseline />
+      <div className='App-shell'>
+        <header className='App-brand'>
+          <img
+            className='App-brand__logo'
+            src={`${process.env.PUBLIC_URL}/sombrero.png`}
+            alt='Sombrero del mago'
+          />
+          <h1 className='App-brand__title'>El mago de la repartija</h1>
+          <p className='App-brand__tagline'>cuentas claras, no magia…</p>
+        </header>
+        <ListaIntegrantes />
       </div>
-      <ListaIntegrantes />
-    </div>
+    </ThemeProvider>
   );
 }
 

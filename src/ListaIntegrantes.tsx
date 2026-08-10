@@ -2,12 +2,13 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  Box,
   Button,
   Checkbox,
   Container,
   FormControlLabel,
   FormGroup,
-  Grid,
+  Stack,
   TextField,
   Typography,
 } from '@mui/material';
@@ -24,7 +25,11 @@ import { DesgloseSubgrupo, SubgrupoJuntada, Transferencia } from './repartija/ty
 
 type Paso = 'roster' | 'subgrupos' | 'resultado';
 
-const botonMorado = { backgroundColor: 'purple' };
+const pasos: { id: Paso; label: string }[] = [
+  { id: 'roster', label: '1 · Integrantes' },
+  { id: 'subgrupos', label: '2 · Subgrupos' },
+  { id: 'resultado', label: '3 · Resultado' },
+];
 
 function siguienteId(subgrupos: SubgrupoJuntada[]): number {
   if (subgrupos.length === 0) return 1;
@@ -98,7 +103,19 @@ function ListaIntegrantes() {
   };
 
   const setMonto = (id: number, nombre: string, montoRaw: string) => {
-    const monto = montoRaw === '' ? 0 : parseInt(montoRaw, 10);
+    if (montoRaw.trim() === '') {
+      setSubgrupos((prev) =>
+        prev.map((sg) => {
+          if (sg.id !== id) return sg;
+          return {
+            ...sg,
+            miembros: sg.miembros.map((m) => (m.nombre === nombre ? { ...m, monto: 0 } : m)),
+          };
+        }),
+      );
+      return;
+    }
+    const monto = parseInt(montoRaw, 10);
     if (Number.isNaN(monto) || monto < 0) return;
     setSubgrupos((prev) =>
       prev.map((sg) => {
@@ -124,90 +141,103 @@ function ListaIntegrantes() {
   };
 
   return (
-    <Container maxWidth='sm'>
-      <Typography variant='subtitle1' mb={2}>
-        {paso === 'roster' && 'Paso 1: integrantes'}
-        {paso === 'subgrupos' && 'Paso 2: subgrupos y montos'}
-        {paso === 'resultado' && 'Paso 3: transferencias'}
-      </Typography>
+    <Container maxWidth='sm' disableGutters>
+      <div className='App-panel'>
+        <nav className='step-indicator' aria-label='Pasos'>
+          {pasos.map((p) => (
+            <span
+              key={p.id}
+              className={`step-indicator__item${paso === p.id ? ' step-indicator__item--active' : ''}`}
+            >
+              {p.label}
+            </span>
+          ))}
+        </nav>
 
-      {error && (
-        <Typography color='error' mb={2}>
-          {error}
-        </Typography>
-      )}
+        {error && (
+          <Typography color='error' mb={2}>
+            {error}
+          </Typography>
+        )}
 
-      {paso === 'roster' && (
-        <>
-          <Grid container spacing={1} mb={2}>
-            {roster.map((nombre) => (
-              <Grid item xs={12} key={nombre}>
-                <span style={{ marginRight: 10 }}>{nombre}</span>
-                <Button size='small' onClick={() => quitarNombre(nombre)}>
-                  Quitar
-                </Button>
-              </Grid>
-            ))}
-          </Grid>
-          <Grid container spacing={2} alignItems='center'>
-            <Grid item xs={8}>
+        {paso === 'roster' && (
+          <Stack spacing={2}>
+            <Typography variant='h6'>¿Quiénes están en la juntada?</Typography>
+            <Box>
+              {roster.map((nombre) => (
+                <div className='roster-chip' key={nombre}>
+                  <Typography fontWeight={600}>{nombre}</Typography>
+                  <Button size='small' onClick={() => quitarNombre(nombre)}>
+                    Quitar
+                  </Button>
+                </div>
+              ))}
+            </Box>
+            <Stack spacing={1.5} sx={{ width: '100%' }}>
               <TextField
                 label='Nombre'
-                variant='filled'
                 size='small'
                 fullWidth
+                variant='outlined'
                 value={nombreNuevo}
                 onChange={(e) => setNombreNuevo(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') agregarNombre();
+                }}
+                sx={{ width: '100%', m: 0 }}
               />
-            </Grid>
-            <Grid item xs={4}>
-              <Button variant='contained' style={botonMorado} onClick={agregarNombre}>
+              <Button variant='contained' fullWidth onClick={agregarNombre}>
                 Agregar
               </Button>
-            </Grid>
-          </Grid>
-          <Button
-            sx={{ mt: 2 }}
-            variant='contained'
-            style={botonMorado}
-            disabled={!rosterPuedeAvanzar(roster)}
-            onClick={() => {
-              setError('');
-              if (subgrupos.length === 0) crearSubgrupo();
-              setPaso('subgrupos');
-            }}
-          >
-            Seguir
-          </Button>
-        </>
-      )}
+            </Stack>
+            <Button
+              variant='contained'
+              fullWidth
+              disabled={!rosterPuedeAvanzar(roster)}
+              onClick={() => {
+                setError('');
+                if (subgrupos.length === 0) crearSubgrupo();
+                setPaso('subgrupos');
+              }}
+            >
+              Seguir
+            </Button>
+          </Stack>
+        )}
 
-      {paso === 'subgrupos' && (
-        <>
-          <Button sx={{ mb: 2, mr: 1 }} onClick={() => setPaso('roster')}>
-            Volver a integrantes
-          </Button>
-          <Button sx={{ mb: 2 }} variant='outlined' onClick={crearSubgrupo}>
-            Agregar grupo
-          </Button>
+        {paso === 'subgrupos' && (
+          <Stack spacing={2}>
+            <Typography variant='h6'>Subgrupos y montos</Typography>
+            <Stack direction='row' spacing={1} flexWrap='wrap'>
+              <Button variant='outlined' onClick={() => setPaso('roster')}>
+                Volver
+              </Button>
+              <Button variant='outlined' onClick={crearSubgrupo}>
+                Agregar grupo
+              </Button>
+            </Stack>
 
-          {subgrupos.map((sg) => (
-            <div key={sg.id} style={{ marginBottom: '1.5rem', borderTop: '1px solid #ddd', paddingTop: 8 }}>
-              <Typography variant='h6'>{sg.nombre}</Typography>
-              <Button size='small' onClick={() => agregarTodos(sg.id)}>
-                Todos
-              </Button>
-              <Button size='small' color='error' onClick={() => borrarSubgrupo(sg.id)}>
-                Borrar grupo
-              </Button>
-              <FormGroup>
-                {roster.map((nombre) => {
-                  const miembro = sg.miembros.find((m) => m.nombre === nombre);
-                  const checked = Boolean(miembro);
-                  return (
-                    <Grid container key={nombre} alignItems='center' spacing={1}>
-                      <Grid item xs={6}>
+            {subgrupos.map((sg) => (
+              <div className='subgroup-block' key={sg.id}>
+                <Typography variant='h6' component='h3'>
+                  {sg.nombre}
+                </Typography>
+                <div className='subgroup-block__actions'>
+                  <Button size='small' variant='contained' onClick={() => agregarTodos(sg.id)}>
+                    Todos
+                  </Button>
+                  <Button size='small' color='error' onClick={() => borrarSubgrupo(sg.id)}>
+                    Borrar grupo
+                  </Button>
+                </div>
+                <FormGroup>
+                  {roster.map((nombre) => {
+                    const miembro = sg.miembros.find((m) => m.nombre === nombre);
+                    const checked = Boolean(miembro);
+                    return (
+                      <div className='member-row' key={nombre}>
                         <FormControlLabel
+                          className='member-row__check'
                           control={
                             <Checkbox
                               checked={checked}
@@ -216,84 +246,87 @@ function ListaIntegrantes() {
                           }
                           label={nombre}
                         />
-                      </Grid>
-                      <Grid item xs={6}>
                         {checked && (
                           <TextField
+                            className='member-row__monto'
                             label='Monto'
                             type='number'
                             size='small'
-                            variant='filled'
-                            value={miembro?.monto ?? 0}
-                            inputProps={{ min: 0, step: 1 }}
+                            value={miembro && miembro.monto === 0 ? '' : miembro?.monto ?? ''}
+                            placeholder='0'
+                            inputProps={{ min: 0, step: 1, inputMode: 'numeric' }}
+                            onFocus={(e) => {
+                              if (miembro?.monto === 0) {
+                                e.target.select();
+                              }
+                            }}
                             onChange={(e) => setMonto(sg.id, nombre, e.target.value)}
                           />
                         )}
-                      </Grid>
-                    </Grid>
-                  );
-                })}
-              </FormGroup>
-              {!subgrupoEsValido(sg) && (
-                <Typography variant='caption' color='error'>
-                  El grupo necesita al menos 2 personas y montos enteros ≥ 0
-                </Typography>
-              )}
-            </div>
-          ))}
+                      </div>
+                    );
+                  })}
+                </FormGroup>
+                {!subgrupoEsValido(sg) && (
+                  <Typography variant='caption' color='error'>
+                    El grupo necesita al menos 2 personas y montos enteros ≥ 0
+                  </Typography>
+                )}
+              </div>
+            ))}
 
-          <Button variant='contained' style={botonMorado} onClick={calcular}>
-            Calcular transferencias
-          </Button>
-        </>
-      )}
+            <Button variant='contained' onClick={calcular}>
+              Calcular transferencias
+            </Button>
+          </Stack>
+        )}
 
-      {paso === 'resultado' && (
-        <>
-          <Button sx={{ mb: 2 }} onClick={() => setPaso('subgrupos')}>
-            Volver a editar
-          </Button>
-          {transferencias.length === 0 ? (
-            <Typography>No hace falta transferir nada.</Typography>
-          ) : (
-            <Grid container spacing={1}>
-              {transferencias.map((t) => (
-                <Grid item xs={12} key={`${t.de}-${t.a}-${t.monto}`}>
-                  <Typography>
+        {paso === 'resultado' && (
+          <Stack spacing={2}>
+            <Typography variant='h6'>Transferencias</Typography>
+            <Button variant='outlined' onClick={() => setPaso('subgrupos')} sx={{ alignSelf: 'flex-start' }}>
+              Volver a editar
+            </Button>
+            {transferencias.length === 0 ? (
+              <Typography>No hace falta transferir nada.</Typography>
+            ) : (
+              <Stack spacing={1}>
+                {transferencias.map((t) => (
+                  <Typography key={`${t.de}-${t.a}-${t.monto}`} fontWeight={600}>
                     {t.de} le transfiere ${t.monto} a {t.a}
                   </Typography>
-                </Grid>
-              ))}
-            </Grid>
-          )}
+                ))}
+              </Stack>
+            )}
 
-          <Accordion sx={{ mt: 2 }} defaultExpanded={false}>
-            <AccordionSummary>
-              <Typography>Desglose por grupo</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Typography variant='caption' display='block' mb={2}>
-                Saldo por grupo (antes del ajuste global de redondeo)
-              </Typography>
-              {desglose.map((sg) => (
-                <div key={sg.id} style={{ marginBottom: '1rem' }}>
-                  <Typography variant='subtitle2'>{sg.nombre}</Typography>
-                  <Typography variant='body2'>
-                    Total ${sg.total} · {sg.cantidadMiembros} personas · cuota ${sg.cuota}
-                  </Typography>
-                  {sg.lineas.map((linea) => (
-                    <Typography key={linea.nombre} variant='body2'>
-                      {linea.nombre}: puso ${linea.puso}, cuota ${linea.cuota}, saldo{' '}
-                      {linea.saldo >= 0 ? '+' : ''}
-                      {linea.saldo}
+            <Accordion defaultExpanded={false}>
+              <AccordionSummary>
+                <Typography fontWeight={600}>Desglose por grupo</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Typography variant='caption' display='block' mb={2}>
+                  Saldo por grupo (antes del ajuste global de redondeo)
+                </Typography>
+                {desglose.map((sg) => (
+                  <Box key={sg.id} mb={2}>
+                    <Typography variant='subtitle2'>{sg.nombre}</Typography>
+                    <Typography variant='body2'>
+                      Total ${sg.total} · {sg.cantidadMiembros} personas · cuota ${sg.cuota}
                     </Typography>
-                  ))}
-                </div>
-              ))}
-            </AccordionDetails>
-          </Accordion>
-        </>
-      )}
+                    {sg.lineas.map((linea) => (
+                      <Typography key={linea.nombre} variant='body2'>
+                        {linea.nombre}: puso ${linea.puso}, cuota ${linea.cuota}, saldo{' '}
+                        {linea.saldo >= 0 ? '+' : ''}
+                        {linea.saldo}
+                      </Typography>
+                    ))}
+                  </Box>
+                ))}
+              </AccordionDetails>
+            </Accordion>
+          </Stack>
+        )}
+      </div>
     </Container>
   );
 }
