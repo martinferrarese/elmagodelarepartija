@@ -1,6 +1,7 @@
 import {
   calcularBalances,
   calcularCuota,
+  calcularDesglose,
   calcularTransferencias,
   juntadaEsValida,
   puedeAgregarAlRoster,
@@ -125,6 +126,51 @@ describe('corrección de resto por ceil', () => {
     const balances = calcularBalances(juntada);
     expect(Object.values(balances).reduce((a, b) => a + b, 0)).toBe(0);
     expect(balances).toEqual({ A: 66, B: -33, C: -33 });
+  });
+});
+
+describe('desglose F2', () => {
+  it('C1: totales y saldos locales', () => {
+    const juntada: Juntada = {
+      roster: ['Ferra', 'Manita', 'Cami'],
+      subgrupos: [grupo(1, 'Grupo 1', { Ferra: 1300, Manita: 500, Cami: 0 })],
+    };
+    expect(calcularDesglose(juntada)).toEqual([
+      {
+        id: 1,
+        nombre: 'Grupo 1',
+        total: 1800,
+        cantidadMiembros: 3,
+        cuota: 600,
+        lineas: [
+          { nombre: 'Ferra', puso: 1300, cuota: 600, saldo: 700 },
+          { nombre: 'Manita', puso: 500, cuota: 600, saldo: -100 },
+          { nombre: 'Cami', puso: 0, cuota: 600, saldo: -600 },
+        ],
+      },
+    ]);
+  });
+
+  it('alcohol: totales y saldos locales', () => {
+    const juntada: Juntada = {
+      roster: ['Ferra', 'Manita', 'Cami'],
+      subgrupos: [
+        grupo(1, 'Alcohol', { Ferra: 16500, Manita: 8000 }),
+        grupo(2, 'Comida', { Ferra: 0, Manita: 27500, Cami: 10000 }),
+      ],
+    };
+    const desglose = calcularDesglose(juntada);
+    expect(desglose[0]).toEqual({
+      id: 1,
+      nombre: 'Alcohol',
+      total: 24500,
+      cantidadMiembros: 2,
+      cuota: 12250,
+      lineas: [
+        { nombre: 'Ferra', puso: 16500, cuota: 12250, saldo: 4250 },
+        { nombre: 'Manita', puso: 8000, cuota: 12250, saldo: -4250 },
+      ],
+    });
   });
 });
 

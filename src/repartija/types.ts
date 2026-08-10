@@ -19,3 +19,19 @@ export type Transferencia = {
   a: string;
   monto: number;
 };
+
+export type LineaDesglose = {
+  nombre: string;
+  puso: number;
+  cuota: number;
+  saldo: number;
+};
+
+export type DesgloseSubgrupo = {
+  id: number;
+  nombre: string;
+  total: number;
+  cantidadMiembros: number;
+  cuota: number;
+  lineas: LineaDesglose[];
+};

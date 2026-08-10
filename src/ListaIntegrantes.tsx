@@ -1,4 +1,7 @@
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Button,
   Checkbox,
   Container,
@@ -10,13 +13,14 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import {
+  calcularDesglose,
   calcularTransferencias,
   juntadaEsValida,
   puedeAgregarAlRoster,
   rosterPuedeAvanzar,
   subgrupoEsValido,
 } from './repartija/calcular';
-import { SubgrupoJuntada, Transferencia } from './repartija/types';
+import { DesgloseSubgrupo, SubgrupoJuntada, Transferencia } from './repartija/types';
 
 type Paso = 'roster' | 'subgrupos' | 'resultado';
 
@@ -33,6 +37,7 @@ function ListaIntegrantes() {
   const [nombreNuevo, setNombreNuevo] = useState('');
   const [subgrupos, setSubgrupos] = useState<SubgrupoJuntada[]>([]);
   const [transferencias, setTransferencias] = useState<Transferencia[]>([]);
+  const [desglose, setDesglose] = useState<DesgloseSubgrupo[]>([]);
   const [error, setError] = useState('');
 
   const agregarNombre = () => {
@@ -114,6 +119,7 @@ function ListaIntegrantes() {
     }
     setError('');
     setTransferencias(calcularTransferencias(juntada));
+    setDesglose(calcularDesglose(juntada));
     setPaso('resultado');
   };
 
@@ -260,6 +266,32 @@ function ListaIntegrantes() {
               ))}
             </Grid>
           )}
+
+          <Accordion sx={{ mt: 2 }} defaultExpanded={false}>
+            <AccordionSummary>
+              <Typography>Desglose por grupo</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Typography variant='caption' display='block' mb={2}>
+                Saldo por grupo (antes del ajuste global de redondeo)
+              </Typography>
+              {desglose.map((sg) => (
+                <div key={sg.id} style={{ marginBottom: '1rem' }}>
+                  <Typography variant='subtitle2'>{sg.nombre}</Typography>
+                  <Typography variant='body2'>
+                    Total ${sg.total} · {sg.cantidadMiembros} personas · cuota ${sg.cuota}
+                  </Typography>
+                  {sg.lineas.map((linea) => (
+                    <Typography key={linea.nombre} variant='body2'>
+                      {linea.nombre}: puso ${linea.puso}, cuota ${linea.cuota}, saldo{' '}
+                      {linea.saldo >= 0 ? '+' : ''}
+                      {linea.saldo}
+                    </Typography>
+                  ))}
+                </div>
+              ))}
+            </AccordionDetails>
+          </Accordion>
         </>
       )}
     </Container>

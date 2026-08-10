@@ -1,4 +1,4 @@
-import { Juntada, SubgrupoJuntada, Transferencia } from './types';
+import { DesgloseSubgrupo, Juntada, SubgrupoJuntada, Transferencia } from './types';
 
 export function calcularCuota(total: number, cantidadMiembros: number): number {
   if (cantidadMiembros <= 0) {
@@ -87,6 +87,27 @@ export function liquidarBalances(balances: Record<string, number>): Transferenci
 
 export function calcularTransferencias(juntada: Juntada): Transferencia[] {
   return liquidarBalances(calcularBalances(juntada));
+}
+
+export function calcularDesglose(juntada: Juntada): DesgloseSubgrupo[] {
+  return juntada.subgrupos.map((subgrupo) => {
+    const total = subgrupo.miembros.reduce((acc, miembro) => acc + miembro.monto, 0);
+    const cantidadMiembros = subgrupo.miembros.length;
+    const cuota = calcularCuota(total, cantidadMiembros);
+    return {
+      id: subgrupo.id,
+      nombre: subgrupo.nombre,
+      total,
+      cantidadMiembros,
+      cuota,
+      lineas: subgrupo.miembros.map((miembro) => ({
+        nombre: miembro.nombre,
+        puso: miembro.monto,
+        cuota,
+        saldo: miembro.monto - cuota,
+      })),
+    };
+  });
 }
 
 export function rosterPuedeAvanzar(roster: string[]): boolean {
