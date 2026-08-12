@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/elmagodelarepartija/static/css/main.1e245b40.css",
+    "main.js": "/elmagodelarepartija/static/js/main.b34d08ff.js",
+    "static/js/787.3c22f178.chunk.js": "/elmagodelarepartija/static/js/787.3c22f178.chunk.js",
+    "index.html": "/elmagodelarepartija/index.html",
+    "main.1e245b40.css.map": "/elmagodelarepartija/static/css/main.1e245b40.css.map",
+    "main.b34d08ff.js.map": "/elmagodelarepartija/static/js/main.b34d08ff.js.map",
+    "787.3c22f178.chunk.js.map": "/elmagodelarepartija/static/js/787.3c22f178.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.1e245b40.css",
+    "static/js/main.b34d08ff.js"
+  ]
+}
