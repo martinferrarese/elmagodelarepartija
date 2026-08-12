@@ -21,6 +21,10 @@ import {
   rosterPuedeAvanzar,
   subgrupoEsValido,
 } from './repartija/calcular';
+import {
+  acreedoresDeTransferencias,
+  formatearResultadoParaCopiar,
+} from './repartija/formatearResultado';
 import { DesgloseSubgrupo, SubgrupoJuntada, Transferencia } from './repartija/types';
 
 type Paso = 'roster' | 'subgrupos' | 'resultado';
@@ -43,7 +47,11 @@ function ListaIntegrantes() {
   const [subgrupos, setSubgrupos] = useState<SubgrupoJuntada[]>([]);
   const [transferencias, setTransferencias] = useState<Transferencia[]>([]);
   const [desglose, setDesglose] = useState<DesgloseSubgrupo[]>([]);
+  const [aliases, setAliases] = useState<Record<string, string>>({});
+  const [copyFeedback, setCopyFeedback] = useState<'ok' | 'error' | ''>('');
   const [error, setError] = useState('');
+
+  const acreedores = acreedoresDeTransferencias(transferencias);
 
   const agregarNombre = () => {
     if (!puedeAgregarAlRoster(roster, nombreNuevo)) {
@@ -144,6 +152,20 @@ function ListaIntegrantes() {
     );
   };
 
+  const setAlias = (nombre: string, valor: string) => {
+    setAliases((prev) => ({ ...prev, [nombre]: valor }));
+  };
+
+  const copiarResultado = async () => {
+    const texto = formatearResultadoParaCopiar(transferencias, aliases);
+    try {
+      await navigator.clipboard.writeText(texto);
+      setCopyFeedback('ok');
+    } catch {
+      setCopyFeedback('error');
+    }
+  };
+
   const calcular = () => {
     const juntada = { roster, subgrupos };
     if (!juntadaEsValida(juntada)) {
@@ -151,6 +173,7 @@ function ListaIntegrantes() {
       return;
     }
     setError('');
+    setCopyFeedback('');
     setTransferencias(calcularTransferencias(juntada));
     setDesglose(calcularDesglose(juntada));
     setPaso('resultado');
@@ -314,9 +337,24 @@ function ListaIntegrantes() {
         {paso === 'resultado' && (
           <Stack spacing={2}>
             <Typography variant='h6'>Transferencias</Typography>
-            <Button variant='outlined' onClick={() => setPaso('subgrupos')} sx={{ alignSelf: 'flex-start' }}>
-              Volver a editar
-            </Button>
+            <Stack direction='row' spacing={1} flexWrap='wrap'>
+              <Button variant='outlined' onClick={() => setPaso('subgrupos')}>
+                Volver a editar
+              </Button>
+              <Button variant='contained' color='secondary' onClick={copiarResultado}>
+                Copiar resultado
+              </Button>
+            </Stack>
+            {copyFeedback === 'ok' && (
+              <Typography variant='body2' color='success.main'>
+                Copiado
+              </Typography>
+            )}
+            {copyFeedback === 'error' && (
+              <Typography variant='body2' color='error'>
+                No se pudo copiar. Probá de nuevo o copiá a mano.
+              </Typography>
+            )}
             {transferencias.length === 0 ? (
               <Typography>No hace falta transferir nada.</Typography>
             ) : (
@@ -325,6 +363,26 @@ function ListaIntegrantes() {
                   <Typography key={`${t.de}-${t.a}-${t.monto}`} fontWeight={600}>
                     {t.de} le transfiere ${t.monto} a {t.a}
                   </Typography>
+                ))}
+              </Stack>
+            )}
+
+            {acreedores.length > 0 && (
+              <Stack spacing={1.5}>
+                <Typography variant='subtitle1' fontWeight={600}>
+                  Alias de cobro
+                </Typography>
+                {acreedores.map((nombre) => (
+                  <TextField
+                    key={nombre}
+                    label={`Alias de ${nombre}`}
+                    size='small'
+                    fullWidth
+                    variant='outlined'
+                    value={aliases[nombre] ?? ''}
+                    onChange={(e) => setAlias(nombre, e.target.value)}
+                    placeholder='Opcional (ej. manita.mp)'
+                  />
                 ))}
               </Stack>
             )}
