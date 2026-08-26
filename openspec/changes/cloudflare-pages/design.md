@@ -33,7 +33,7 @@ Delete `.github/workflows/deploy-pages.yml`. Remove `predeploy`/`deploya` and th
 **Alternatives considered:** leave the workflow — two hosts with incompatible `homepage`. Keep `deploya` — unused second path.
 
 ### 4. Dashboard build settings
-Framework Create React App (or None). Build command `yarn build`. Output directory `build`. Root directory empty. Production env `NODE_VERSION=20`. Yarn is implied by `yarn.lock`. Custom domain `www.elmagodelarepartija.com.ar`. Align nic.ar CNAME `www` with the `*.pages.dev` target Pages shows.
+Framework Create React App (or None). Build command `yarn build`. Output directory `build`. Root directory empty. Production env `NODE_VERSION=20`. Pin Yarn classic: `package.json` `packageManager` `yarn@1.22.19` (Pages v2 defaults to Yarn 4, which refuses a v1 `yarn.lock` with YN0028). Optional dashboard backup: `YARN_VERSION=1`. Custom domain `www.elmagodelarepartija.com.ar`. Align nic.ar CNAME `www` with the `*.pages.dev` target Pages shows.
 
 **Alternatives considered:** commit a `wrangler.toml` only for docs — rejected; Git dashboard is the source of truth for this app.
 

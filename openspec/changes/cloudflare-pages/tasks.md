@@ -4,6 +4,7 @@
 - [x] 1.2 Eliminar `.github/workflows/deploy-pages.yml`
 - [x] 1.3 Quitar scripts `predeploy` y `deploya` y la dependencia `gh-pages`; actualizar el lockfile
 - [x] 1.4 Verificar que `yarn build` emite assets en la raíz (no con prefijo `/elmagodelarepartija/`)
+- [x] 1.5 Fijar Yarn classic en `package.json` (`packageManager`: `yarn@1.22.19`) para que Pages v2 no use Yarn 4
 
 ## 2. Cloudflare Pages (one-time, dashboard)
 

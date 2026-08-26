@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "homepage": ".",
   "private": true,
+  "packageManager": "yarn@1.22.19",
   "dependencies": {
     "@emotion/react": "^11.10.0",
     "@emotion/styled": "^11.10.0",
