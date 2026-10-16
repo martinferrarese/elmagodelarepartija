@@ -6,27 +6,24 @@ Publica la app estática en GitHub Pages bajo la URL github.io del repositorio, 
 
 ## Requirements
 
-### Requirement: Public URL on GitHub Pages
-The system SHALL be available as a static site at `https://martinferrarese.github.io/elmagodelarepartija/` without requiring a custom domain.
+### Requirement: Public URL on Cloudflare Pages
+The system SHALL be available as a static site at `https://www.elmagodelarepartija.com.ar` with asset paths resolving at the domain root. Cloudflare Pages MUST be the only public hosting origin. The apex hostname `elmagodelarepartija.com.ar` (without `www`) is out of scope.
 
-#### Scenario: Site loads on github.io
-- **WHEN** a user opens `https://martinferrarese.github.io/elmagodelarepartija/` in a browser
-- **THEN** the app loads and the asset paths resolve correctly under the project subpath
+#### Scenario: Site loads on www
+- **WHEN** a user opens `https://www.elmagodelarepartija.com.ar` in a browser
+- **THEN** the app loads and static assets resolve from that origin (not from github.io or a repo subpath)
+
+#### Scenario: github.io is not the public origin
+- **WHEN** a user relies on the previously published GitHub Pages URL
+- **THEN** that URL MUST NOT be treated as the supported public site for this capability
 
 ### Requirement: Automated deploy on push to main
-A successful push to the `main` branch MUST trigger a CI workflow that builds the production bundle and publishes it to GitHub Pages.
+A successful push to the `main` branch MUST trigger Cloudflare Pages to build the production bundle and publish it. A failed production build MUST leave the previously published site unchanged.
 
 #### Scenario: Push updates the published site
-- **WHEN** a commit is pushed to `main` and the build succeeds
-- **THEN** GitHub Pages is updated with that build without a manual deploy step
+- **WHEN** a commit is pushed to `main` and the Cloudflare Pages build succeeds
+- **THEN** `https://www.elmagodelarepartija.com.ar` is updated with that build without a manual deploy step
 
 #### Scenario: Failed build does not publish
-- **WHEN** a push to `main` fails the production build
+- **WHEN** a push to `main` fails the production build on Cloudflare Pages
 - **THEN** the previously published site MUST remain unchanged
-
-### Requirement: No custom domain for this hosting path
-The GitHub Pages publication for this change MUST NOT depend on `elmagodelarepartija.com.ar` (or any other custom domain) to be reachable.
-
-#### Scenario: Reachable without custom DNS
-- **WHEN** the custom domain DNS is unavailable or not configured
-- **THEN** the site remains reachable via the `github.io` URL
