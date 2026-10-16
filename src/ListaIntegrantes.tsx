@@ -233,6 +233,7 @@ function ListaIntegrantes() {
             </Stack>
             <Button
               variant='contained'
+              color='secondary'
               fullWidth
               disabled={!rosterPuedeAvanzar(roster)}
               onClick={() => {
