@@ -29,12 +29,6 @@ import { DesgloseSubgrupo, SubgrupoJuntada, Transferencia } from './repartija/ty
 
 type Paso = 'roster' | 'subgrupos' | 'resultado';
 
-const pasos: { id: Paso; label: string }[] = [
-  { id: 'roster', label: '1 · Integrantes' },
-  { id: 'subgrupos', label: '2 · Subgrupos' },
-  { id: 'resultado', label: '3 · Resultado' },
-];
-
 function siguienteId(subgrupos: SubgrupoJuntada[]): number {
   if (subgrupos.length === 0) return 1;
   return Math.max(...subgrupos.map((s) => s.id)) + 1;
@@ -182,17 +176,6 @@ function ListaIntegrantes() {
   return (
     <Container maxWidth='sm' disableGutters>
       <div className='App-panel'>
-        <nav className='step-indicator' aria-label='Pasos'>
-          {pasos.map((p) => (
-            <span
-              key={p.id}
-              className={`step-indicator__item${paso === p.id ? ' step-indicator__item--active' : ''}`}
-            >
-              {p.label}
-            </span>
-          ))}
-        </nav>
-
         {error && (
           <Typography color='error' mb={2}>
             {error}

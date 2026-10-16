@@ -16,3 +16,11 @@ test('debería usar color secondary en Seguir y primary en Agregar cuando se mue
   expect(botonAgregar).toHaveClass('MuiButton-containedPrimary');
   expect(botonSeguir).toHaveClass('MuiButton-containedSecondary');
 });
+
+test('no debería mostrar el indicador superior de pasos cuando se renderiza la app', () => {
+  render(<App />);
+  expect(screen.queryByRole('navigation', { name: /Pasos/i })).not.toBeInTheDocument();
+  expect(screen.queryByText(/1 · Integrantes/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/2 · Subgrupos/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/3 · Resultado/i)).not.toBeInTheDocument();
+});

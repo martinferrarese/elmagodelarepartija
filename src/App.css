@@ -91,38 +91,6 @@
   }
 }
 
-.step-indicator {
-  display: flex;
-  gap: 0.4rem;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-bottom: 1.25rem;
-}
-
-.step-indicator__item {
-  font-family: 'DM Sans', Helvetica, Arial, sans-serif;
-  font-size: 0.72rem;
-  font-weight: 600;
-  padding: 0.3rem 0.55rem;
-  border-radius: 999px;
-  border: 1px solid rgba(42, 20, 80, 0.2);
-  color: var(--cloak-mid);
-  background: transparent;
-}
-
-@media (min-width: 480px) {
-  .step-indicator__item {
-    font-size: 0.8rem;
-    padding: 0.35rem 0.75rem;
-  }
-}
-
-.step-indicator__item--active {
-  background: var(--gold);
-  border-color: var(--gold);
-  color: var(--cloak);
-}
-
 .subgroup-block {
   margin-bottom: 1.25rem;
   padding: 0.85rem;
