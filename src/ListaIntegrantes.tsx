@@ -2,12 +2,9 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
-  Box,
   Button,
   Checkbox,
   Container,
-  FormControlLabel,
-  FormGroup,
   Stack,
   TextField,
   Typography,
@@ -16,161 +13,303 @@ import { useState } from 'react';
 import {
   calcularDesglose,
   calcularTransferencias,
-  juntadaEsValida,
   puedeAgregarAlRoster,
-  rosterPuedeAvanzar,
-  subgrupoEsValido,
 } from './repartija/calcular';
 import {
   acreedoresDeTransferencias,
   formatearResultadoParaCopiar,
 } from './repartija/formatearResultado';
-import { DesgloseSubgrupo, SubgrupoJuntada, Transferencia } from './repartija/types';
+import { DesgloseSubgrupo, Juntada, Transferencia } from './repartija/types';
 
-type Paso = 'roster' | 'subgrupos' | 'resultado';
+type Paso = 'lista' | 'cuentas' | 'resultado';
+type Origen = 'lista' | 'cuentas';
 
-function siguienteId(subgrupos: SubgrupoJuntada[]): number {
-  if (subgrupos.length === 0) return 1;
-  return Math.max(...subgrupos.map((s) => s.id)) + 1;
+type CuentaEditor = {
+  id: number;
+  nombre: string;
+  nombreInicial: string;
+  incluido: Record<string, boolean>;
+  montos: Record<string, number>;
+};
+
+function textoMonto(monto: number): string {
+  return monto === 0 ? '' : String(monto);
+}
+
+function montoSiValido(valor: string): number | null {
+  if (valor === '') return 0;
+  if (!/^\d+$/.test(valor)) return null;
+  return Number(valor);
+}
+
+function renombrarClave<T>(
+  registro: Record<string, T>,
+  anterior: string,
+  nuevo: string,
+): Record<string, T> {
+  if (anterior === nuevo || !(anterior in registro)) return registro;
+  const siguiente = { ...registro };
+  siguiente[nuevo] = siguiente[anterior];
+  delete siguiente[anterior];
+  return siguiente;
+}
+
+function nombreVisibleCuenta(cuenta: CuentaEditor): string {
+  return cuenta.nombre.trim() || cuenta.nombreInicial;
+}
+
+function textoSaldo(saldo: number): string {
+  return `${saldo >= 0 ? '+' : ''}${saldo}`;
 }
 
 function ListaIntegrantes() {
-  const [paso, setPaso] = useState<Paso>('roster');
+  const [paso, setPaso] = useState<Paso>('lista');
+  const [origen, setOrigen] = useState<Origen>('lista');
   const [roster, setRoster] = useState<string[]>([]);
+  const [montos, setMontos] = useState<Record<string, number>>({});
+  const [aliases, setAliases] = useState<Record<string, string>>({});
+  const [borradores, setBorradores] = useState<Record<string, string>>({});
+  const [cuentas, setCuentas] = useState<CuentaEditor[]>([]);
   const [nombreNuevo, setNombreNuevo] = useState('');
-  const [subgrupos, setSubgrupos] = useState<SubgrupoJuntada[]>([]);
+  const [error, setError] = useState('');
+  const [confirmandoVuelta, setConfirmandoVuelta] = useState(false);
   const [transferencias, setTransferencias] = useState<Transferencia[]>([]);
   const [desglose, setDesglose] = useState<DesgloseSubgrupo[]>([]);
-  const [aliases, setAliases] = useState<Record<string, string>>({});
-  const [copyFeedback, setCopyFeedback] = useState<'ok' | 'error' | ''>('');
-  const [error, setError] = useState('');
-
-  const acreedores = acreedoresDeTransferencias(transferencias);
+  const [avisoCopia, setAvisoCopia] = useState('');
 
   const agregarNombre = () => {
+    const limpio = nombreNuevo.trim();
     if (!puedeAgregarAlRoster(roster, nombreNuevo)) {
-      setError('Nombre vacío o duplicado');
+      setError('Nombre vacío o duplicado.');
       return;
     }
-    setRoster((prev) => [...prev, nombreNuevo.trim()]);
+    setRoster((prev) => [...prev, limpio]);
+    setMontos((prev) => ({ ...prev, [limpio]: 0 }));
+    setCuentas((prev) =>
+      prev.map((cuenta, indice) => ({
+        ...cuenta,
+        incluido: { ...cuenta.incluido, [limpio]: indice === 0 },
+        montos: { ...cuenta.montos, [limpio]: 0 },
+      })),
+    );
     setNombreNuevo('');
     setError('');
   };
 
   const quitarNombre = (nombre: string) => {
     setRoster((prev) => prev.filter((n) => n !== nombre));
-    setSubgrupos((prev) =>
-      prev.map((sg) => ({
-        ...sg,
-        miembros: sg.miembros.filter((m) => m.nombre !== nombre),
-      })),
-    );
-  };
-
-  const crearSubgrupo = () => {
-    setSubgrupos((prev) => {
-      const id = siguienteId(prev);
-      return [...prev, { id, nombre: `Grupo ${id}`, miembros: [] }];
+    setMontos((prev) => {
+      const siguiente = { ...prev };
+      delete siguiente[nombre];
+      return siguiente;
     });
-  };
-
-  const borrarSubgrupo = (id: number) => {
-    setSubgrupos((prev) => prev.filter((sg) => sg.id !== id));
-  };
-
-  const toggleMiembro = (id: number, nombre: string) => {
-    setSubgrupos((prev) =>
-      prev.map((sg) => {
-        if (sg.id !== id) return sg;
-        const existe = sg.miembros.some((m) => m.nombre === nombre);
-        if (existe) {
-          return { ...sg, miembros: sg.miembros.filter((m) => m.nombre !== nombre) };
-        }
-        return { ...sg, miembros: [...sg.miembros, { nombre, monto: 0 }] };
+    setAliases((prev) => {
+      const siguiente = { ...prev };
+      delete siguiente[nombre];
+      return siguiente;
+    });
+    setBorradores((prev) => {
+      const siguiente = { ...prev };
+      delete siguiente[nombre];
+      return siguiente;
+    });
+    setCuentas((prev) =>
+      prev.map((cuenta) => {
+        const incluido = { ...cuenta.incluido };
+        const montosCuenta = { ...cuenta.montos };
+        delete incluido[nombre];
+        delete montosCuenta[nombre];
+        return { ...cuenta, incluido, montos: montosCuenta };
       }),
     );
   };
 
-  const agregarTodos = (id: number) => {
-    setSubgrupos((prev) =>
-      prev.map((sg) => {
-        if (sg.id !== id) return sg;
-        const miembros = roster.map((nombre) => {
-          const actual = sg.miembros.find((m) => m.nombre === nombre);
-          return actual ?? { nombre, monto: 0 };
-        });
-        return { ...sg, miembros };
-      }),
-    );
-  };
-
-  const setMonto = (id: number, nombre: string, montoRaw: string) => {
-    if (montoRaw.trim() === '') {
-      setSubgrupos((prev) =>
-        prev.map((sg) => {
-          if (sg.id !== id) return sg;
-          return {
-            ...sg,
-            miembros: sg.miembros.map((m) => (m.nombre === nombre ? { ...m, monto: 0 } : m)),
-          };
-        }),
-      );
+  const confirmarNombre = (anterior: string) => {
+    const limpio = (borradores[anterior] ?? anterior).trim();
+    const duplicado = roster.some((nombre) => nombre !== anterior && nombre === limpio);
+    if (!limpio || duplicado) {
+      setBorradores((prev) => ({ ...prev, [anterior]: anterior }));
+      setError('Nombre vacío o duplicado.');
       return;
     }
-    const monto = parseInt(montoRaw, 10);
-    if (Number.isNaN(monto) || monto < 0) return;
-    setSubgrupos((prev) =>
-      prev.map((sg) => {
-        if (sg.id !== id) return sg;
-        return {
-          ...sg,
-          miembros: sg.miembros.map((m) => (m.nombre === nombre ? { ...m, monto } : m)),
-        };
-      }),
-    );
-  };
-
-  const setNombreSubgrupo = (id: number, nombreRaw: string) => {
-    setSubgrupos((prev) =>
-      prev.map((sg) => (sg.id === id ? { ...sg, nombre: nombreRaw } : sg)),
-    );
-  };
-
-  const confirmarNombreSubgrupo = (id: number) => {
-    setSubgrupos((prev) =>
-      prev.map((sg) => {
-        if (sg.id !== id) return sg;
-        const limpio = sg.nombre.trim();
-        return { ...sg, nombre: limpio.length > 0 ? limpio : `Grupo ${id}` };
-      }),
-    );
-  };
-
-  const setAlias = (nombre: string, valor: string) => {
-    setAliases((prev) => ({ ...prev, [nombre]: valor }));
-  };
-
-  const copiarResultado = async () => {
-    const texto = formatearResultadoParaCopiar(transferencias, aliases);
-    try {
-      await navigator.clipboard.writeText(texto);
-      setCopyFeedback('ok');
-    } catch {
-      setCopyFeedback('error');
+    if (limpio === anterior) {
+      setBorradores((prev) => ({ ...prev, [anterior]: limpio }));
+      return;
     }
+    setRoster((prev) => prev.map((nombre) => (nombre === anterior ? limpio : nombre)));
+    setMontos((prev) => renombrarClave(prev, anterior, limpio));
+    setAliases((prev) => renombrarClave(prev, anterior, limpio));
+    setBorradores((prev) => ({ ...renombrarClave(prev, anterior, limpio), [limpio]: limpio }));
+    setCuentas((prev) =>
+      prev.map((cuenta) => ({
+        ...cuenta,
+        incluido: renombrarClave(cuenta.incluido, anterior, limpio),
+        montos: renombrarClave(cuenta.montos, anterior, limpio),
+      })),
+    );
+    setError('');
+  };
+
+  const abrirCuentas = () => {
+    const primera: CuentaEditor = {
+      id: 1,
+      nombre: 'Cuenta',
+      nombreInicial: 'Cuenta',
+      incluido: Object.fromEntries(roster.map((nombre) => [nombre, true])),
+      montos: Object.fromEntries(roster.map((nombre) => [nombre, montos[nombre] ?? 0])),
+    };
+    setCuentas([primera]);
+    setError('');
+    setPaso('cuentas');
+  };
+
+  const actualizarNombreCuenta = (id: number, nombre: string) => {
+    setCuentas((prev) => prev.map((cuenta) => (cuenta.id === id ? { ...cuenta, nombre } : cuenta)));
+  };
+
+  const confirmarNombreCuenta = (id: number) => {
+    setCuentas((prev) =>
+      prev.map((cuenta) => {
+        if (cuenta.id !== id) return cuenta;
+        const limpio = cuenta.nombre.trim();
+        return { ...cuenta, nombre: limpio || cuenta.nombreInicial };
+      }),
+    );
+  };
+
+  const agregarCuenta = () => {
+    const siguienteId = cuentas.reduce((max, cuenta) => Math.max(max, cuenta.id), 0) + 1;
+    const nueva: CuentaEditor = {
+      id: siguienteId,
+      nombre: `Cuenta ${siguienteId}`,
+      nombreInicial: `Cuenta ${siguienteId}`,
+      incluido: Object.fromEntries(roster.map((nombre) => [nombre, false])),
+      montos: Object.fromEntries(roster.map((nombre) => [nombre, 0])),
+    };
+    setCuentas((prev) => [...prev, nueva]);
+  };
+
+  const borrarCuenta = (id: number) => {
+    const siguientes = cuentas.filter((cuenta) => cuenta.id !== id);
+    setCuentas(siguientes);
+    setError('');
+    if (siguientes.length < 2) setConfirmandoVuelta(false);
+  };
+
+  const volverConCuenta = (cuenta: CuentaEditor) => {
+    setMontos(
+      Object.fromEntries(
+        roster.map((nombre) => [nombre, cuenta.incluido[nombre] ? cuenta.montos[nombre] ?? 0 : 0]),
+      ),
+    );
+    setCuentas([]);
+    setConfirmandoVuelta(false);
+    setError('');
+    setPaso('lista');
+  };
+
+  const pedirVolverAUnaCuenta = () => {
+    if (cuentas.length <= 1) {
+      if (cuentas[0]) volverConCuenta(cuentas[0]);
+      return;
+    }
+    setConfirmandoVuelta(true);
+  };
+
+  const actualizarIncluido = (id: number, persona: string, incluido: boolean) => {
+    setError('');
+    setCuentas((prev) =>
+      prev.map((cuenta) =>
+        cuenta.id === id
+          ? { ...cuenta, incluido: { ...cuenta.incluido, [persona]: incluido } }
+          : cuenta,
+      ),
+    );
+  };
+
+  const actualizarMontoCuenta = (id: number, persona: string, valor: string) => {
+    const monto = montoSiValido(valor);
+    if (monto === null) return;
+    setCuentas((prev) =>
+      prev.map((cuenta) =>
+        cuenta.id === id ? { ...cuenta, montos: { ...cuenta.montos, [persona]: monto } } : cuenta,
+      ),
+    );
+  };
+
+  const actualizarMonto = (nombre: string, valor: string) => {
+    const monto = montoSiValido(valor);
+    if (monto === null) return;
+    setMontos((prev) => ({ ...prev, [nombre]: monto }));
+  };
+
+  const publicarResultado = (juntada: Juntada, siguienteOrigen: Origen) => {
+    setTransferencias(calcularTransferencias(juntada));
+    setDesglose(calcularDesglose(juntada));
+    setOrigen(siguienteOrigen);
+    setAvisoCopia('');
+    setError('');
+    setConfirmandoVuelta(false);
+    setPaso('resultado');
   };
 
   const calcular = () => {
-    const juntada = { roster, subgrupos };
-    if (!juntadaEsValida(juntada)) {
-      setError('Revisá que haya al menos un grupo válido (≥2 personas, montos ≥ 0)');
+    if (roster.length < 2) {
+      setError('Hacen falta dos nombres para calcular.');
       return;
     }
-    setError('');
-    setCopyFeedback('');
-    setTransferencias(calcularTransferencias(juntada));
-    setDesglose(calcularDesglose(juntada));
-    setPaso('resultado');
+
+    publicarResultado(
+      {
+        roster,
+        subgrupos: [
+          {
+            id: 1,
+            nombre: 'Cuenta',
+            miembros: roster.map((nombre) => ({ nombre, monto: montos[nombre] ?? 0 })),
+          },
+        ],
+      },
+      'lista',
+    );
+  };
+
+  const calcularDesdeCuentas = () => {
+    const invalida = cuentas.find(
+      (cuenta) => roster.filter((nombre) => cuenta.incluido[nombre]).length < 2,
+    );
+    if (invalida) {
+      setError(`${nombreVisibleCuenta(invalida)} necesita al menos dos personas.`);
+      return;
+    }
+
+    publicarResultado(
+      {
+        roster,
+        subgrupos: cuentas.map((cuenta) => ({
+          id: cuenta.id,
+          nombre: cuenta.nombre.trim() || cuenta.nombreInicial,
+          miembros: roster
+            .filter((nombre) => cuenta.incluido[nombre])
+            .map((nombre) => ({ nombre, monto: cuenta.montos[nombre] ?? 0 })),
+        })),
+      },
+      'cuentas',
+    );
+  };
+
+  const copiarResultado = async () => {
+    try {
+      await navigator.clipboard.writeText(formatearResultadoParaCopiar(transferencias, aliases));
+      setAvisoCopia('Copiado');
+    } catch {
+      setAvisoCopia('No se pudo copiar. Probá de nuevo o copiá a mano.');
+    }
+  };
+
+  const editar = () => {
+    setConfirmandoVuelta(false);
+    setPaso(origen === 'cuentas' ? 'cuentas' : 'lista');
   };
 
   return (
@@ -182,217 +321,242 @@ function ListaIntegrantes() {
           </Typography>
         )}
 
-        {paso === 'roster' && (
+        {paso === 'lista' && (
           <Stack spacing={2}>
-            <Typography variant='h6' textAlign='center' width='100%'>
-              ¿Quiénes están en la juntada?
+            <Typography component='h2' variant='h6' textAlign='center' width='100%'>
+              ¿Cuánto puso cada uno?
             </Typography>
-            <Box>
-              {roster.map((nombre) => (
-                <div className='roster-chip' key={nombre}>
-                  <Typography fontWeight={600}>{nombre}</Typography>
-                  <Button size='small' onClick={() => quitarNombre(nombre)}>
-                    Quitar
-                  </Button>
-                </div>
-              ))}
-            </Box>
-            <Stack spacing={1.5} sx={{ width: '100%' }}>
-              <TextField
-                label='Nombre'
-                size='small'
-                fullWidth
-                variant='outlined'
-                value={nombreNuevo}
-                onChange={(e) => setNombreNuevo(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') agregarNombre();
-                }}
-                sx={{ width: '100%', m: 0 }}
-              />
-              <Button variant='contained' fullWidth onClick={agregarNombre}>
-                Agregar
-              </Button>
-            </Stack>
-            <Button
-              variant='contained'
-              color='secondary'
-              fullWidth
-              disabled={!rosterPuedeAvanzar(roster)}
-              onClick={() => {
-                setError('');
-                if (subgrupos.length === 0) crearSubgrupo();
-                setPaso('subgrupos');
-              }}
-            >
-              Seguir
-            </Button>
-          </Stack>
-        )}
 
-        {paso === 'subgrupos' && (
-          <Stack spacing={2}>
-            <Typography variant='h6'>Subgrupos y montos</Typography>
-            <Stack direction='row' spacing={1} flexWrap='wrap'>
-              <Button variant='outlined' onClick={() => setPaso('roster')}>
-                Volver
-              </Button>
-              <Button variant='contained' color='secondary' onClick={crearSubgrupo}>
-                Agregar grupo
-              </Button>
-            </Stack>
-
-            {subgrupos.map((sg) => (
-              <div className='subgroup-block' key={sg.id}>
+            {roster.map((nombre) => (
+              <div className='member-row' key={nombre}>
                 <TextField
-                  label='Nombre del grupo'
                   size='small'
-                  fullWidth
-                  variant='outlined'
-                  value={sg.nombre}
-                  onChange={(e) => setNombreSubgrupo(sg.id, e.target.value)}
-                  onBlur={() => confirmarNombreSubgrupo(sg.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      (e.target as HTMLInputElement).blur();
-                    }
+                  value={borradores[nombre] ?? nombre}
+                  inputProps={{ 'aria-label': `Nombre de ${nombre}` }}
+                  onChange={(e) => {
+                    setBorradores((prev) => ({ ...prev, [nombre]: e.target.value }));
+                    setError('');
                   }}
-                  sx={{ mb: 1 }}
+                  onBlur={() => confirmarNombre(nombre)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') confirmarNombre(nombre);
+                  }}
+                  sx={{ flex: '1 1 auto', minWidth: 0 }}
                 />
-                <div className='subgroup-block__actions'>
-                  <Button size='small' variant='contained' onClick={() => agregarTodos(sg.id)}>
-                    Todos
-                  </Button>
-                  <Button size='small' color='error' onClick={() => borrarSubgrupo(sg.id)}>
-                    Borrar grupo
-                  </Button>
-                </div>
-                <FormGroup>
-                  {roster.map((nombre) => {
-                    const miembro = sg.miembros.find((m) => m.nombre === nombre);
-                    const checked = Boolean(miembro);
-                    return (
-                      <div className='member-row' key={nombre}>
-                        <FormControlLabel
-                          className='member-row__check'
-                          control={
-                            <Checkbox
-                              checked={checked}
-                              onChange={() => toggleMiembro(sg.id, nombre)}
-                            />
-                          }
-                          label={nombre}
-                        />
-                        {checked && (
-                          <TextField
-                            className='member-row__monto'
-                            label='Monto'
-                            type='number'
-                            size='small'
-                            value={miembro && miembro.monto === 0 ? '' : miembro?.monto ?? ''}
-                            placeholder='0'
-                            inputProps={{ min: 0, step: 1, inputMode: 'numeric' }}
-                            onFocus={(e) => {
-                              if (miembro?.monto === 0) {
-                                e.target.select();
-                              }
-                            }}
-                            onChange={(e) => setMonto(sg.id, nombre, e.target.value)}
-                          />
-                        )}
-                      </div>
-                    );
-                  })}
-                </FormGroup>
-                {!subgrupoEsValido(sg) && (
-                  <Typography variant='caption' color='error'>
-                    El grupo necesita al menos 2 personas y montos enteros ≥ 0
-                  </Typography>
-                )}
+                <TextField
+                  className='member-row__monto'
+                  size='small'
+                  type='text'
+                  placeholder='0'
+                  value={textoMonto(montos[nombre] ?? 0)}
+                  inputProps={{
+                    'aria-label': `Monto de ${nombre}`,
+                    inputMode: 'numeric',
+                  }}
+                  onChange={(e) => actualizarMonto(nombre, e.target.value)}
+                />
+                <Button size='small' onClick={() => quitarNombre(nombre)}>
+                  Quitar
+                </Button>
               </div>
             ))}
 
-            <Button variant='contained' onClick={calcular}>
+            <div className='lista-alta'>
+              <TextField
+                label='Nombre'
+                size='small'
+                variant='outlined'
+                value={nombreNuevo}
+                onChange={(e) => {
+                  setNombreNuevo(e.target.value);
+                  setError('');
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') agregarNombre();
+                }}
+              />
+              <Button variant='contained' onClick={agregarNombre}>
+                Agregar
+              </Button>
+            </div>
+
+            <Button variant='text' color='secondary' onClick={abrirCuentas}>
+              ¿Hay otra cuenta, como el alcohol?
+            </Button>
+            <Button variant='contained' fullWidth onClick={calcular}>
               Calcular transferencias
             </Button>
           </Stack>
         )}
 
+        {paso === 'cuentas' && (
+          <Stack spacing={2}>
+            <Typography component='h2' variant='h6'>
+              Cuentas de la juntada
+            </Typography>
+
+            {cuentas.map((cuenta, indice) => (
+              <Stack key={cuenta.id} spacing={1}>
+                <TextField
+                  size='small'
+                  value={cuenta.nombre}
+                  inputProps={{ 'aria-label': 'Nombre de la cuenta' }}
+                  onChange={(e) => actualizarNombreCuenta(cuenta.id, e.target.value)}
+                  onBlur={() => confirmarNombreCuenta(cuenta.id)}
+                />
+
+                {roster.map((nombre) => (
+                  <div className='member-row' key={`${cuenta.id}-${nombre}`}>
+                    {indice === 0 ? (
+                      <TextField
+                        size='small'
+                        value={borradores[nombre] ?? nombre}
+                        inputProps={{ 'aria-label': `Nombre de ${nombre}` }}
+                        onChange={(e) => {
+                          setBorradores((prev) => ({ ...prev, [nombre]: e.target.value }));
+                          setError('');
+                        }}
+                        onBlur={() => confirmarNombre(nombre)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') confirmarNombre(nombre);
+                        }}
+                        sx={{ flex: '1 1 auto', minWidth: 0 }}
+                      />
+                    ) : (
+                      <Typography sx={{ flex: '1 1 auto', minWidth: 0 }}>{nombre}</Typography>
+                    )}
+                    <Checkbox
+                      size='small'
+                      checked={cuenta.incluido[nombre] ?? false}
+                      onChange={(e) => actualizarIncluido(cuenta.id, nombre, e.target.checked)}
+                      inputProps={{ 'aria-label': nombre }}
+                    />
+                    {cuenta.incluido[nombre] && (
+                      <TextField
+                        className='member-row__monto'
+                        size='small'
+                        type='text'
+                        placeholder='0'
+                        value={textoMonto(cuenta.montos[nombre] ?? 0)}
+                        inputProps={{
+                          'aria-label': `Monto de ${nombre} en ${cuenta.nombre}`,
+                          inputMode: 'numeric',
+                        }}
+                        onChange={(e) => actualizarMontoCuenta(cuenta.id, nombre, e.target.value)}
+                      />
+                    )}
+                    {indice === 0 && (
+                      <Button size='small' onClick={() => quitarNombre(nombre)}>
+                        Quitar
+                      </Button>
+                    )}
+                  </div>
+                ))}
+
+                {cuentas.length >= 2 && (
+                  <Button size='small' onClick={() => borrarCuenta(cuenta.id)}>
+                    Borrar cuenta
+                  </Button>
+                )}
+              </Stack>
+            ))}
+
+            <div className='lista-alta'>
+              <TextField
+                label='Nombre'
+                size='small'
+                variant='outlined'
+                value={nombreNuevo}
+                onChange={(e) => {
+                  setNombreNuevo(e.target.value);
+                  setError('');
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') agregarNombre();
+                }}
+              />
+              <Button variant='contained' onClick={agregarNombre}>
+                Agregar
+              </Button>
+            </div>
+
+            <Button variant='contained' color='secondary' onClick={agregarCuenta}>
+              Agregar cuenta
+            </Button>
+            <Button variant='outlined' onClick={pedirVolverAUnaCuenta}>
+              Volver a una cuenta
+            </Button>
+            <Button variant='contained' fullWidth onClick={calcularDesdeCuentas}>
+              Calcular transferencias
+            </Button>
+            {confirmandoVuelta && (
+              <>
+                <Typography>
+                  {`Se borran ${cuentas
+                    .slice(1)
+                    .map((cuenta) => cuenta.nombre)
+                    .join(', ')}. Queda una sola cuenta con los montos de la primera.`}
+                </Typography>
+                <Button onClick={() => cuentas[0] && volverConCuenta(cuentas[0])}>
+                  Borrar las otras
+                </Button>
+                <Button onClick={() => setConfirmandoVuelta(false)}>Cancelar</Button>
+              </>
+            )}
+          </Stack>
+        )}
+
         {paso === 'resultado' && (
           <Stack spacing={2}>
-            <Typography variant='h6'>Transferencias</Typography>
-            <Stack direction='row' spacing={1} flexWrap='wrap'>
-              <Button variant='outlined' onClick={() => setPaso('subgrupos')}>
-                Volver a editar
-              </Button>
-              <Button variant='contained' color='secondary' onClick={copiarResultado}>
-                Copiar resultado
-              </Button>
-            </Stack>
-            {copyFeedback === 'ok' && (
-              <Typography variant='body2' color='success.main'>
-                Copiado
-              </Typography>
-            )}
-            {copyFeedback === 'error' && (
-              <Typography variant='body2' color='error'>
-                No se pudo copiar. Probá de nuevo o copiá a mano.
-              </Typography>
-            )}
+            <Typography component='h2' variant='h6'>
+              Transferencias
+            </Typography>
+            <Button variant='outlined' onClick={editar}>
+              Editar
+            </Button>
             {transferencias.length === 0 ? (
               <Typography>No hace falta transferir nada.</Typography>
             ) : (
-              <Stack spacing={1}>
-                {transferencias.map((t) => (
-                  <Typography key={`${t.de}-${t.a}-${t.monto}`} fontWeight={600}>
-                    {t.de} le transfiere ${t.monto} a {t.a}
-                  </Typography>
-                ))}
-              </Stack>
-            )}
-
-            {acreedores.length > 0 && (
-              <Stack spacing={1.5}>
-                <Typography variant='subtitle1' fontWeight={600}>
-                  Alias de cobro
+              transferencias.map((transferencia) => (
+                <Typography key={`${transferencia.de}-${transferencia.a}`}>
+                  {transferencia.de} le transfiere ${transferencia.monto} a {transferencia.a}
                 </Typography>
-                {acreedores.map((nombre) => (
-                  <TextField
-                    key={nombre}
-                    label={`Alias de ${nombre}`}
-                    size='small'
-                    fullWidth
-                    variant='outlined'
-                    value={aliases[nombre] ?? ''}
-                    onChange={(e) => setAlias(nombre, e.target.value)}
-                    placeholder='Opcional (ej. manita.mp)'
-                  />
-                ))}
-              </Stack>
+              ))
             )}
-
-            <Accordion defaultExpanded={false}>
+            {transferencias.length > 0 && <Typography>Alias de cobro</Typography>}
+            {transferencias.length > 0 &&
+              acreedoresDeTransferencias(transferencias).map((nombre) => (
+                <TextField
+                  key={nombre}
+                  label={`Alias de ${nombre}`}
+                  size='small'
+                  value={aliases[nombre] ?? ''}
+                  onChange={(e) => setAliases((prev) => ({ ...prev, [nombre]: e.target.value }))}
+                />
+              ))}
+            <Button variant='contained' color='secondary' onClick={copiarResultado}>
+              Copiar resultado
+            </Button>
+            {avisoCopia && <Typography>{avisoCopia}</Typography>}
+            <Accordion defaultExpanded={false} TransitionProps={{ timeout: 0 }}>
               <AccordionSummary>
-                <Typography fontWeight={600}>Desglose por grupo</Typography>
+                <Typography>Cómo se calculó</Typography>
               </AccordionSummary>
               <AccordionDetails>
-                <Typography variant='caption' display='block' mb={2}>
-                  Saldo por grupo (antes del ajuste global de redondeo)
-                </Typography>
-                {desglose.map((sg) => (
-                  <Box key={sg.id} mb={2}>
-                    <Typography variant='subtitle2'>{sg.nombre}</Typography>
-                    <Typography variant='body2'>
-                      Total ${sg.total} · {sg.cantidadMiembros} personas · cuota ${sg.cuota}
+                {desglose.map((subgrupo) => (
+                  <Stack key={subgrupo.id} spacing={0.5}>
+                    {origen === 'cuentas' && <Typography>{subgrupo.nombre}</Typography>}
+                    <Typography>
+                      {`Total $${subgrupo.total} · ${subgrupo.cantidadMiembros} personas · cuota $${subgrupo.cuota}`}
                     </Typography>
-                    {sg.lineas.map((linea) => (
-                      <Typography key={linea.nombre} variant='body2'>
-                        {linea.nombre}: puso ${linea.puso}, cuota ${linea.cuota}, saldo{' '}
-                        {linea.saldo >= 0 ? '+' : ''}
-                        {linea.saldo}
+                    {subgrupo.lineas.map((linea) => (
+                      <Typography key={`${subgrupo.id}-${linea.nombre}`}>
+                        {`${linea.nombre}: puso $${linea.puso}, cuota $${
+                          linea.cuota
+                        }, saldo ${textoSaldo(linea.saldo)}`}
                       </Typography>
                     ))}
-                  </Box>
+                  </Stack>
                 ))}
               </AccordionDetails>
             </Accordion>
