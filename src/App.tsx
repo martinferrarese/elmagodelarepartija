@@ -1,6 +1,8 @@
 import { CssBaseline, ThemeProvider } from '@mui/material';
+import CuentaJueves from './CuentaJueves';
 import ListaIntegrantes from './ListaIntegrantes';
 import './App.css';
+import { esRutaRepartijaJueves } from './repartija/cuentaJueves';
 import { magoTheme } from './theme';
 
 function App() {
@@ -17,7 +19,7 @@ function App() {
           <h1 className='App-brand__title'>El mago de la repartija</h1>
           <p className='App-brand__tagline'>Cuentas claras, no magia…</p>
         </header>
-        <ListaIntegrantes />
+        {esRutaRepartijaJueves(window.location.pathname) ? <CuentaJueves /> : <ListaIntegrantes />}
       </div>
     </ThemeProvider>
   );

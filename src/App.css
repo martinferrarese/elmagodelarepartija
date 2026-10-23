@@ -3,8 +3,7 @@
   width: 100%;
   max-width: 100vw;
   overflow-x: hidden;
-  background:
-    radial-gradient(ellipse at top, rgba(232, 197, 71, 0.08), transparent 45%),
+  background: radial-gradient(ellipse at top, rgba(232, 197, 71, 0.08), transparent 45%),
     linear-gradient(180deg, var(--cloak-mid) 0%, var(--cloak) 55%);
   padding: 1rem 0.75rem 2.5rem;
   box-sizing: border-box;
@@ -125,4 +124,23 @@
 .lista-alta .MuiButton-root {
   flex: 0 0 auto;
   white-space: nowrap;
+}
+
+.jueves-fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.jueves-fila__nombre {
+  flex: 1 1 7rem;
+  min-width: 0;
+}
+
+.jueves-fila__monto {
+  flex: 0 0 7.5rem;
+  width: 7.5rem;
+  max-width: 46%;
 }
