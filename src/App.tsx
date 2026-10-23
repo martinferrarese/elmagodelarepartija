@@ -15,7 +15,7 @@ function App() {
             alt='Sombrero del mago'
           />
           <h1 className='App-brand__title'>El mago de la repartija</h1>
-          <p className='App-brand__tagline'>cuentas claras, no magia…</p>
+          <p className='App-brand__tagline'>Cuentas claras, no magia…</p>
         </header>
         <ListaIntegrantes />
       </div>
