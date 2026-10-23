@@ -40,7 +40,7 @@ Falta es el total a juntar menos la suma anotada. Con centavos puede quedar polv
 
 ## Ruta en producción
 
-Cloudflare Pages tiene que servir `index.html` en `/repartijajueves` y `/repartijajueves/` con un rewrite 200. Si no, el enlace directo no abre la app.
+Cloudflare Pages redirige `/index.html` a `/`. Por eso la ruta no se resuelve reescribiendo a `index.html`: eso termina en la home. El build copia `index.html` a `repartijajueves.html`, y Pages sirve ese archivo en `/repartijajueves`. `/repartijajueves/` redirige ahí. Un `<base href="/">` hace que el JS y el CSS se pidan en la raíz del dominio.
 
 ## Tests
 

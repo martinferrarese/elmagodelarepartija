@@ -24,7 +24,7 @@
   "scripts": {
     "reinstala": "rm -rf node_modules && yarn install",
     "arranca": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "react-scripts build && cp build/index.html build/repartijajueves.html",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "lint": "eslint src/**/*.{js,jsx,ts,tsx,json}",
