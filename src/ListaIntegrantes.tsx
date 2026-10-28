@@ -15,6 +15,7 @@ import {
   calcularTransferencias,
   puedeAgregarAlRoster,
 } from './repartija/calcular';
+import { armarUrlCompartida, leerJuntadaDeSearch } from './repartija/compartir';
 import {
   acreedoresDeTransferencias,
   formatearResultadoParaCopiar,
@@ -30,6 +31,18 @@ type CuentaEditor = {
   nombreInicial: string;
   incluido: Record<string, boolean>;
   montos: Record<string, number>;
+};
+
+type EstadoInicial = {
+  paso: Paso;
+  origen: Origen;
+  roster: string[];
+  montos: Record<string, number>;
+  aliases: Record<string, string>;
+  cuentas: CuentaEditor[];
+  juntadaCalculada: Juntada | null;
+  transferencias: Transferencia[];
+  desglose: DesgloseSubgrupo[];
 };
 
 function textoMonto(monto: number): string {
@@ -62,19 +75,77 @@ function textoSaldo(saldo: number): string {
   return `${saldo >= 0 ? '+' : ''}${saldo}`;
 }
 
+function leerEstadoInicial(): EstadoInicial {
+  const compartido = leerJuntadaDeSearch(window.location.search);
+  if (!compartido) {
+    return {
+      paso: 'lista',
+      origen: 'lista',
+      roster: [],
+      montos: {},
+      aliases: {},
+      cuentas: [],
+      juntadaCalculada: null,
+      transferencias: [],
+      desglose: [],
+    };
+  }
+
+  const { origen, juntada, aliases } = compartido;
+  const primera = juntada.subgrupos[0];
+  const mapaPrimera = new Map(primera.miembros.map((m) => [m.nombre, m.monto]));
+  const montos = Object.fromEntries(
+    juntada.roster.map((nombre) => [nombre, mapaPrimera.get(nombre) ?? 0]),
+  );
+
+  const cuentas: CuentaEditor[] =
+    origen === 'cuentas'
+      ? juntada.subgrupos.map((subgrupo) => {
+          const mapaSubgrupo = new Map(subgrupo.miembros.map((m) => [m.nombre, m.monto]));
+          return {
+            id: subgrupo.id,
+            nombre: subgrupo.nombre,
+            nombreInicial: subgrupo.id === 1 ? 'Cuenta' : `Cuenta ${subgrupo.id}`,
+            incluido: Object.fromEntries(
+              juntada.roster.map((nombre) => [nombre, mapaSubgrupo.has(nombre)]),
+            ),
+            montos: Object.fromEntries(
+              juntada.roster.map((nombre) => [nombre, mapaSubgrupo.get(nombre) ?? 0]),
+            ),
+          };
+        })
+      : [];
+
+  return {
+    paso: 'resultado',
+    origen,
+    roster: juntada.roster,
+    montos,
+    aliases,
+    cuentas,
+    juntadaCalculada: juntada,
+    transferencias: calcularTransferencias(juntada),
+    desglose: calcularDesglose(juntada),
+  };
+}
+
 function ListaIntegrantes() {
-  const [paso, setPaso] = useState<Paso>('lista');
-  const [origen, setOrigen] = useState<Origen>('lista');
-  const [roster, setRoster] = useState<string[]>([]);
-  const [montos, setMontos] = useState<Record<string, number>>({});
-  const [aliases, setAliases] = useState<Record<string, string>>({});
+  const [inicial] = useState<EstadoInicial>(leerEstadoInicial);
+  const [paso, setPaso] = useState<Paso>(inicial.paso);
+  const [origen, setOrigen] = useState<Origen>(inicial.origen);
+  const [roster, setRoster] = useState<string[]>(inicial.roster);
+  const [montos, setMontos] = useState<Record<string, number>>(inicial.montos);
+  const [aliases, setAliases] = useState<Record<string, string>>(inicial.aliases);
   const [borradores, setBorradores] = useState<Record<string, string>>({});
-  const [cuentas, setCuentas] = useState<CuentaEditor[]>([]);
+  const [cuentas, setCuentas] = useState<CuentaEditor[]>(inicial.cuentas);
   const [nombreNuevo, setNombreNuevo] = useState('');
   const [error, setError] = useState('');
   const [confirmandoVuelta, setConfirmandoVuelta] = useState(false);
-  const [transferencias, setTransferencias] = useState<Transferencia[]>([]);
-  const [desglose, setDesglose] = useState<DesgloseSubgrupo[]>([]);
+  const [juntadaCalculada, setJuntadaCalculada] = useState<Juntada | null>(
+    inicial.juntadaCalculada,
+  );
+  const [transferencias, setTransferencias] = useState<Transferencia[]>(inicial.transferencias);
+  const [desglose, setDesglose] = useState<DesgloseSubgrupo[]>(inicial.desglose);
   const [avisoCopia, setAvisoCopia] = useState('');
 
   const agregarNombre = () => {
@@ -244,6 +315,7 @@ function ListaIntegrantes() {
   };
 
   const publicarResultado = (juntada: Juntada, siguienteOrigen: Origen) => {
+    setJuntadaCalculada(juntada);
     setTransferencias(calcularTransferencias(juntada));
     setDesglose(calcularDesglose(juntada));
     setOrigen(siguienteOrigen);
@@ -304,6 +376,21 @@ function ListaIntegrantes() {
       setAvisoCopia('Copiado');
     } catch {
       setAvisoCopia('No se pudo copiar. Probá de nuevo o copiá a mano.');
+    }
+  };
+
+  const copiarLink = async () => {
+    if (!juntadaCalculada) return;
+    try {
+      const link = armarUrlCompartida(window.location.href, {
+        origen,
+        juntada: juntadaCalculada,
+        aliases,
+      });
+      await navigator.clipboard.writeText(link);
+      setAvisoCopia('Link copiado');
+    } catch {
+      setAvisoCopia('No se pudo copiar el link. Probá de nuevo.');
     }
   };
 
@@ -536,6 +623,9 @@ function ListaIntegrantes() {
               ))}
             <Button variant='contained' color='secondary' onClick={copiarResultado}>
               Copiar resultado
+            </Button>
+            <Button variant='outlined' onClick={copiarLink}>
+              Copiar link
             </Button>
             {avisoCopia && <Typography>{avisoCopia}</Typography>}
             <Accordion defaultExpanded={false} TransitionProps={{ timeout: 0 }}>

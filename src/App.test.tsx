@@ -257,3 +257,51 @@ test('debería volver a la lista desde Editar cuando se calculó la cuenta únic
   expect(screen.getByRole('heading', { name: '¿Cuánto puso cada uno?' })).toBeInTheDocument();
   expect(screen.getByLabelText('Monto de Ferra')).toHaveValue('100');
 });
+
+test('debería copiar un link compartible y al abrirlo mostrar directamente el cálculo y los alias', async () => {
+  let textoCopiado = '';
+  Object.assign(navigator, {
+    clipboard: {
+      writeText: jest.fn(async (texto: string) => {
+        textoCopiado = texto;
+      }),
+    },
+  });
+
+  const { unmount } = render(<App />);
+  await userEvent.type(screen.getByLabelText('Nombre'), 'Ferra');
+  await userEvent.click(screen.getByRole('button', { name: 'Agregar' }));
+  await userEvent.type(screen.getByLabelText('Nombre'), 'Manita');
+  await userEvent.click(screen.getByRole('button', { name: 'Agregar' }));
+  await userEvent.type(screen.getByLabelText('Nombre'), 'Cami');
+  await userEvent.click(screen.getByRole('button', { name: 'Agregar' }));
+  await userEvent.type(screen.getByLabelText('Monto de Ferra'), '1300');
+  await userEvent.type(screen.getByLabelText('Monto de Manita'), '500');
+  await userEvent.click(screen.getByRole('button', { name: 'Calcular transferencias' }));
+
+  await userEvent.type(screen.getByLabelText('Alias de Ferra'), 'ferra.mp');
+  await userEvent.click(screen.getByRole('button', { name: 'Copiar link' }));
+  expect(await screen.findByText('Link copiado')).toBeInTheDocument();
+  expect(textoCopiado).toContain('?juntada=');
+
+  unmount();
+
+  const urlCompartida = new URL(textoCopiado);
+  window.history.pushState({}, '', `${urlCompartida.pathname}${urlCompartida.search}`);
+
+  try {
+    render(<App />);
+    expect(screen.getByRole('heading', { name: 'Transferencias' })).toBeInTheDocument();
+    expect(screen.getByText('Cami le transfiere $600 a Ferra')).toBeInTheDocument();
+    expect(screen.getByText('Manita le transfiere $100 a Ferra')).toBeInTheDocument();
+    expect(screen.getByLabelText('Alias de Ferra')).toHaveValue('ferra.mp');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Editar' }));
+    expect(screen.getByRole('heading', { name: '¿Cuánto puso cada uno?' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Monto de Ferra')).toHaveValue('1300');
+    expect(screen.getByLabelText('Monto de Manita')).toHaveValue('500');
+  } finally {
+    window.history.pushState({}, '', '/');
+  }
+});
+
